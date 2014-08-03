@@ -5,7 +5,7 @@
 
 #include <QTimer>
 
-QList<CardItem *> TablePile::removeCardItems(const QList<int> &card_ids, Player::Place place) {
+QList<CardItem *> TablePile::removeCardItems(const QList<int> &card_ids, Player::Place) {
     QList<CardItem *> result;
     _m_mutex_pileCards.lock();
     result = _createCards(card_ids);
@@ -140,7 +140,7 @@ bool TablePile::_addCardItems(QList<CardItem *> &card_items, const CardsMoveStru
     m_visibleCards.append(card_items);
     int numAdded = card_items.length();
     int numRemoved = m_visibleCards.size() - qMax(m_numCardsVisible, numAdded + 1);
-    
+
     for (int i = 0; i < numRemoved; ++i) {
         CardItem *toRemove = m_visibleCards[i];
         _markClearance(toRemove);

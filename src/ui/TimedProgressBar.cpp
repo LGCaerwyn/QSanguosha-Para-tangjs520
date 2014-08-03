@@ -54,12 +54,13 @@ void TimedProgressBar::timerEvent(QTimerEvent *) {
             killTimer(m_timer);
             m_timer = 0;
         }
-        emitTimeout = true; 
+        emitTimeout = true;
     }
     val = m_val;
     m_mutex.unlock();
     this->setValue(val);
     if (doHide) hide();
+    update();
     if (emitTimeout) emit timedOut();
 }
 
@@ -77,7 +78,7 @@ void QSanCommandProgressBar::setCountdown(CommandType command) {
     m_mutex.unlock();
 }
 
-void QSanCommandProgressBar::paintEvent(QPaintEvent *e) {
+void QSanCommandProgressBar::paintEvent(QPaintEvent *) {
     m_mutex.lock();
     int val = this->m_val;
     int max = this->m_max;
@@ -89,7 +90,7 @@ void QSanCommandProgressBar::paintEvent(QPaintEvent *e) {
 
     if (orientation() == Qt::Vertical) {
         painter.translate(0, height);
-        qSwap(width, height); 
+        qSwap(width, height);
         painter.rotate(-90);
     }
 
@@ -114,7 +115,7 @@ void QSanCommandProgressBar::paintEvent(QPaintEvent *e) {
     painter.drawPixmap(0, 0, width, height, m_prog);
 }
 
-void QSanCommandProgressBar::setCountdown(Countdown countdown) {
+void QSanCommandProgressBar::setCountdown(const Countdown &countdown) {
     m_mutex.lock();
     m_hasTimer = (countdown.m_type != Countdown::S_COUNTDOWN_NO_LIMIT);
     m_max = countdown.m_max;

@@ -216,7 +216,7 @@ void CoupleScenario::remarry(ServerPlayer *enkemann, ServerPlayer *widow) const{
 }
 
 ServerPlayer *CoupleScenario::getSpouse(const ServerPlayer *player) const{
-    return player->tag["spouse"].value<PlayerStar>();
+    return player->tag["spouse"].value<ServerPlayer *>();
 }
 
 bool CoupleScenario::isWidow(ServerPlayer *player) const{
@@ -258,7 +258,7 @@ QString CoupleScenario::getRoles() const{
     return "ZNNNNNNNN";
 }
 
-void CoupleScenario::onTagSet(Room *room, const QString &key) const{
+void CoupleScenario::onTagSet(Room *, const QString &) const{
 }
 
 AI::Relation CoupleScenario::relationTo(const ServerPlayer *a, const ServerPlayer *b) const{

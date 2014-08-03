@@ -49,7 +49,7 @@ HuyuanCard::HuyuanCard() {
     handling_method = Card::MethodNone;
 }
 
-bool HuyuanCard::targetFilter(const QList<const Player *> &targets, const Player *to_select, const Player *Self) const{
+bool HuyuanCard::targetFilter(const QList<const Player *> &targets, const Player *to_select, const Player *) const{
     if (!targets.isEmpty())
         return false;
 
@@ -124,11 +124,11 @@ public:
 HeyiCard::HeyiCard() {
 }
 
-bool HeyiCard::targetFilter(const QList<const Player *> &targets, const Player *to_select, const Player *Self) const{
+bool HeyiCard::targetFilter(const QList<const Player *> &targets, const Player *, const Player *) const{
     return targets.length() < 2;
 }
 
-bool HeyiCard::targetsFeasible(const QList<const Player *> &targets, const Player *Self) const{
+bool HeyiCard::targetsFeasible(const QList<const Player *> &targets, const Player *) const{
     return targets.length() == 2;
 }
 
@@ -153,7 +153,7 @@ void HeyiCard::onUse(Room *room, const CardUseStruct &card_use) const{
 }
 
 void HeyiCard::use(Room *room, ServerPlayer *source, QList<ServerPlayer *> &targets) const{
-    room->setTag("HeyiSource", QVariant::fromValue((PlayerStar)source));
+    room->setTag("HeyiSource", QVariant::fromValue(source));
     QList<ServerPlayer *> players = room->getAllPlayers();
     int index1 = players.indexOf(targets.first()), index2 = players.indexOf(targets.last());
     int index_self = players.indexOf(source);
@@ -176,7 +176,7 @@ void HeyiCard::use(Room *room, ServerPlayer *source, QList<ServerPlayer *> &targ
             forever {
                 cont_targets.append(players.at(index2));
                 if (index1 == index2) break;
-                index2++;
+                ++index2;
                 if (index2 >= players.length())
                     index2 -= players.length();
             }
@@ -225,7 +225,7 @@ public:
             if (change.to != Player::NotActive)
                 return false;
         }
-        if (room->getTag("HeyiSource").value<PlayerStar>() == player) {
+        if (room->getTag("HeyiSource").value<ServerPlayer *>() == player) {
             room->removeTag("HeyiSource");
             QStringList list = player->tag[objectName()].toStringList();
             player->tag.remove(objectName());
@@ -259,7 +259,7 @@ public:
             QList<ServerPlayer *> jiangweis = room->findPlayersBySkillName(objectName());
             foreach (ServerPlayer *jiangwei, jiangweis) {
                 if (jiangwei->isAlive() && (player == jiangwei || player->isAdjacentTo(jiangwei))
-                    && room->askForSkillInvoke(player, objectName(), QVariant::fromValue((PlayerStar)jiangwei))) {
+                    && room->askForSkillInvoke(player, objectName(), QVariant::fromValue(jiangwei))) {
                     if (player != jiangwei) {
                         room->notifySkillInvoked(jiangwei, objectName());
                         LogMessage log;
@@ -361,7 +361,8 @@ void ShangyiCard::onEffect(const CardEffectStruct &effect) const{
     QStringList choicelist;
     if (!effect.to->isKongcheng())
         choicelist.append("handcards");
-    if (room->getMode() == "04_1v3" || room->getMode() == "04_boss" || room->getMode() == "06_3v3") {
+    if (room->getMode() == "04_1v3" || room->getMode() == "04_boss"
+        || room->getMode() == "06_3v3" || room->getMode() == "08_defense") {
         ;
     } else if (room->getMode() == "06_XMode") {
         QStringList backup = player->tag["XModeBackup"].toStringList();
@@ -379,7 +380,7 @@ void ShangyiCard::onEffect(const CardEffectStruct &effect) const{
         choicelist.append("role");
     }
     if (choicelist.isEmpty()) return;
-    QString choice = room->askForChoice(effect.from, "shangyi", choicelist.join("+"), QVariant::fromValue((PlayerStar)player));
+    QString choice = room->askForChoice(effect.from, "shangyi", choicelist.join("+"), QVariant::fromValue(player));
 
     LogMessage log;
     log.type = "$ShangyiView";
@@ -474,7 +475,7 @@ public:
             for (int i = 0; i < use.to.length(); ++i) {
                 ServerPlayer *to = use.to.at(i);
                 if (to->isAlive() && to->isAdjacentTo(player) && to->isAdjacentTo(use.from)
-                    && room->askForSkillInvoke(player, objectName(), QVariant::fromValue((PlayerStar)to))) {
+                    && room->askForSkillInvoke(player, objectName(), QVariant::fromValue(to))) {
                     room->broadcastSkillInvoke(objectName());
                     if (jink_list.at(i).toInt() == 1)
                         jink_list.replace(i, QVariant(2));
@@ -628,40 +629,53 @@ public:
     }
 };
 
-class Qiluan: public TriggerSkill {
+class Qiluan : public TriggerSkill
+{
 public:
-    Qiluan(): TriggerSkill("qiluan") {
-        events << Death << EventPhaseStart;
+    Qiluan() : TriggerSkill("qiluan") {
+        events << Death << EventPhaseChanging;
         frequency = Frequent;
     }
 
-    virtual bool triggerable(const ServerPlayer *target) const{
+    virtual bool triggerable(const ServerPlayer *target) const {
         return target != NULL;
     }
 
-    virtual bool trigger(TriggerEvent triggerEvent, Room *room, ServerPlayer *player, QVariant &data) const{
+    virtual bool trigger(TriggerEvent triggerEvent, Room *room, ServerPlayer *player, QVariant &data) const {
         if (triggerEvent == Death) {
             DeathStruct death = data.value<DeathStruct>();
-            if (death.who != player)
+            if (death.who != player) {
                 return false;
+            }
             ServerPlayer *killer = death.damage ? death.damage->from : NULL;
             ServerPlayer *current = room->getCurrent();
 
             if (killer && current && (current->isAlive() || death.who == current)
-                && current->getPhase() != Player::NotActive)
+                && current->getPhase() != Player::NotActive) {
                 killer->addMark(objectName());
-        } else {
-            if (player->getPhase() == Player::NotActive) {
+            }
+        }
+        else {
+            PhaseChangeStruct change = data.value<PhaseChangeStruct>();
+            if (change.to == Player::NotActive) {
                 QList<ServerPlayer *> hetaihous;
+                QList<int> mark_count;
                 foreach (ServerPlayer *p, room->getAllPlayers()) {
-                    if (p->getMark(objectName()) > 0 && TriggerSkill::triggerable(p))
+                    if (p->getMark(objectName()) > 0 && TriggerSkill::triggerable(p)) {
                         hetaihous << p;
+                        mark_count << p->getMark(objectName());
+                    }
                     p->setMark(objectName(), 0);
                 }
 
-                foreach (ServerPlayer *p, hetaihous) {
-                    if (p->isAlive() && room->askForSkillInvoke(p, objectName()))
+                for (int i = 0; i < hetaihous.length(); ++i) {
+                    ServerPlayer *p = hetaihous.at(i);
+                    for (int j = 0; j < mark_count.at(i); ++j) {
+                        if (p->isDead() || !room->askForSkillInvoke(p, objectName())) {
+                            break;
+                        }
                         p->drawCards(3, objectName());
+                    }
                 }
             }
         }

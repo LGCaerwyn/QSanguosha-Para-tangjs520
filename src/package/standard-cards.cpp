@@ -261,10 +261,8 @@ void Slash::onUse(Room *room, const CardUseStruct &card_use) const{
         room->setEmotion(player, "killer");
 
     if (use.from->getMark("drank") > 0) {
-        const Card *drank_card = use.card->inherits("WrappedCard") ? this : use.card;
-        room->setCardFlag(drank_card, "drank");
-        drank_card->tag["drank"] = use.from->getMark("drank");
-
+        room->setCardFlag(use.card, "drank");
+        use.card->setTag("drank", use.from->getMark("drank"));
         room->setPlayerMark(use.from, "drank", 0);
     }
 
@@ -407,7 +405,7 @@ public:
         events << TargetSpecified;
     }
 
-    virtual bool trigger(TriggerEvent, Room *room, ServerPlayer *player, QVariant &data) const{
+    virtual bool trigger(TriggerEvent, Room *room, ServerPlayer *, QVariant &data) const{
         CardUseStruct use = data.value<CardUseStruct>();
         foreach (ServerPlayer *to, use.to) {
             if (((use.from->isMale() && to->isFemale()) || (use.from->isFemale() && to->isMale()))
@@ -445,7 +443,7 @@ public:
         events << TargetSpecified;
     }
 
-    virtual bool trigger(TriggerEvent, Room *room, ServerPlayer *player, QVariant &data) const{
+    virtual bool trigger(TriggerEvent, Room *room, ServerPlayer *, QVariant &data) const{
         CardUseStruct use = data.value<CardUseStruct>();
         if (use.card->isKindOf("Slash")) {
             bool do_anim = false;
@@ -536,7 +534,7 @@ public:
     }
 
     virtual bool trigger(TriggerEvent triggerEvent, Room *room, ServerPlayer *player, QVariant &data) const{
-        CardStar card = NULL;
+        const Card *card = NULL;
         if (triggerEvent == PreCardUsed)
             card = data.value<CardUseStruct>().card;
         else
@@ -807,12 +805,7 @@ void SavageAssault::onEffect(const CardEffectStruct &effect) const{
     bool drwushuang_effect = true;
     if (slash && effect.from->hasSkill("drwushuang")) {
         room->broadcastSkillInvoke("wushuang");
-
-        LogMessage log;
-        log.from = effect.from;
-        log.arg = "drwushuang";
-        log.type = "#TriggerSkill";
-        room->sendLog(log);
+        room->sendCompulsoryTriggerLog(effect.from, "drwushuang");
 
         drwushuang_effect = room->askForDiscard(effect.to, "drwushuang", 1, 1, true, true);
     }
@@ -850,12 +843,7 @@ void ArcheryAttack::onEffect(const CardEffectStruct &effect) const{
     bool drwushuang_effect = true;
     if (jink && effect.from->hasSkill("drwushuang")) {
         room->broadcastSkillInvoke("wushuang");
-
-        LogMessage log;
-        log.from = effect.from;
-        log.arg = "drwushuang";
-        log.type = "#TriggerSkill";
-        room->sendLog(log);
+        room->sendCompulsoryTriggerLog(effect.from, "drwushuang");
 
         drwushuang_effect = room->askForDiscard(effect.to, "drwushuang", 1, 1, true, true);
     }
@@ -918,7 +906,7 @@ void Collateral::onUse(Room *room, const CardUseStruct &card_use) const{
 
     CardUseStruct new_use = card_use;
     new_use.to.removeAt(1);
-    killer->tag["collateralVictim"] = QVariant::fromValue((PlayerStar)victim);
+    killer->tag["collateralVictim"] = QVariant::fromValue(victim);
 
     SingleTargetTrick::onUse(room, new_use);
 }
@@ -934,7 +922,7 @@ void Collateral::onEffect(const CardEffectStruct &effect) const{
     ServerPlayer *source = effect.from;
     Room *room = source->getRoom();
     ServerPlayer *killer = effect.to;
-    ServerPlayer *victim = effect.to->tag["collateralVictim"].value<PlayerStar>();
+    ServerPlayer *victim = effect.to->tag["collateralVictim"].value<ServerPlayer *>();
     effect.to->tag.remove("collateralVictim");
     if (!victim) return;
     WrappedCard *weapon = killer->getWeapon();
@@ -1321,10 +1309,10 @@ void WoodenOxCard::use(Room *room, ServerPlayer *source, QList<ServerPlayer *> &
     ServerPlayer *target = room->askForPlayerChosen(source, targets, "wooden_ox", "@wooden_ox-move", true);
     if (target) {
         const Card *treasure = source->getTreasure();
-        if (treasure)
+        if (treasure) {
             room->moveCardTo(treasure, source, target, Player::PlaceEquip,
-            CardMoveReason(CardMoveReason::S_REASON_TRANSFER,
-            source->objectName(), "wooden_ox", QString()));
+                CardMoveReason(CardMoveReason::S_REASON_TRANSFER, source->objectName(), "wooden_ox", QString()));
+        }
     }
 }
 
@@ -1405,6 +1393,7 @@ WoodenOx::WoodenOx(Suit suit, int number)
 
 void WoodenOx::onUninstall(ServerPlayer *player) const{
     player->getRoom()->addPlayerHistory(player, "WoodenOxCard", 0);
+    Treasure::onUninstall(player);
 }
 
 StandardCardPackage::StandardCardPackage()

@@ -18,7 +18,7 @@
 "photoFocusFrame1": "image/system/frame/responding.png",
 "photoFocusFrame2": "image/system/frame/sos.png",
 "photoFrameWhenSelected": "image/system/frame/photoSelected.png",
-"dashboardLeftFrame": "image/system/dashboard-equip.png", 
+"dashboardLeftFrame": "image/system/dashboard-equip.png",
 "dashboardRightFrame": "image/system/dashboard-avatar.png",
 "dashboardMiddleFrame": "image/system/dashboard-hand.png",
 "dashboardHandCardNum-default": "image/system/handcard.png",
@@ -199,6 +199,13 @@
 
 // equips
 "photoEquip-default": "image/small-equips/%1.png",
+"photoEquip-chitu": "image/small-equips/offensivehorse.png",
+"photoEquip-dayuan": "image/small-equips/offensivehorse.png",
+"photoEquip-zixing": "image/small-equips/offensivehorse.png",
+"photoEquip-dilu": "image/small-equips/defensivehorse.png",
+"photoEquip-jueying": "image/small-equips/defensivehorse.png",
+"photoEquip-hualiu": "image/small-equips/defensivehorse.png",
+"photoEquip-zhuahuangfeidian": "image/small-equips/defensivehorse.png",
 "dashboardEquip-default": "image/equips/%1.png",
 
 // kingdoms

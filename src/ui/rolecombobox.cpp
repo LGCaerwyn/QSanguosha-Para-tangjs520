@@ -24,7 +24,7 @@ void RoleComboBoxItem::setRole(const QString &role)
     load(rolePixmapPath, m_size, false);
 }
 
-void RoleComboBoxItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+void RoleComboBoxItem::mousePressEvent(QGraphicsSceneMouseEvent *)
 {
     emit clicked();
 }
@@ -45,7 +45,7 @@ RoleComboBox::RoleComboBox(QGraphicsItem *parent)
           << new RoleComboBoxItem("rebel", index)
           << new RoleComboBoxItem("renegade", index);
 
-    if (ServerInfo.EnableHegemony) {
+    if (ServerInfo.EnableHegemony && isNormalGameMode(ServerInfo.GameMode)) {
         items << new RoleComboBoxItem("careerist", index);
     }
 
@@ -61,7 +61,7 @@ RoleComboBox::RoleComboBox(QGraphicsItem *parent)
     }
 }
 
-void RoleComboBox::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void RoleComboBox::paint(QPainter *, const QStyleOptionGraphicsItem *, QWidget *)
 {
 }
 

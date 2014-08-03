@@ -8,6 +8,7 @@
 #include "recorder.h"
 #include "jsonutils.h"
 #include "SkinBank.h"
+#include "mainwindow.h"
 
 #include <QApplication>
 #include <QMessageBox>
@@ -284,11 +285,17 @@ void Client::setup(const Json::Value &setup_str)
         return;
     }
 
+    ServerInfo.clear();
     if (ServerInfo.parse(setup_info)) {
         emit server_connected();
         notifyServer(S_COMMAND_TOGGLE_READY);
     }
     else {
+        MainWindow *mainWnd = qobject_cast<MainWindow *>(parent());
+        if (NULL != mainWnd) {
+            mainWnd->deleteClient();
+        }
+
         QMessageBox::warning(NULL, tr("Warning"), tr("Setup string can not be parsed: %1").arg(setup_info.join(":")));
     }
 }
@@ -333,7 +340,7 @@ bool Client::processServerRequest(const QSanGeneralPacket &packet)
 
     Countdown countdown;
     countdown.m_current = 0;
-    if (!msg.isArray() || msg.size() <= 1 
+    if (!msg.isArray() || msg.size() <= 1
         || !countdown.tryParse(msg[msg.size() - 1])) {
         countdown.m_type = Countdown::S_COUNTDOWN_USE_DEFAULT;
         countdown.m_max = ServerInfo.getCommandTimeout(command, S_CLIENT_INSTANCE);
@@ -452,7 +459,7 @@ void Client::getCards(const Json::Value &arg)
         move.from = getPlayer(move.from_player_name);
         move.to = getPlayer(move.to_player_name);
         Player::Place dstPlace = move.to_place;
-    
+
         if (dstPlace == Player::PlaceSpecial) {
             ((ClientPlayer *)move.to)->changePile(move.to_pile_name, true, move.card_ids);
         }
@@ -1374,7 +1381,7 @@ void Client::gameOver(const Json::Value &arg)
     setStatus(Client::NotActive);
 
     //玩家主动投降时会进入到该函数，由于新增了野心家势力，
-    //所以在国战模式下，是无法准备显示出未亮将角色的势力的
+    //所以在国战模式下，是无法准确显示出未亮将角色的势力的
     if (!ServerInfo.EnableHegemony) {
         QStringList roles;
         tryParse(arg[1], roles);
@@ -2010,11 +2017,17 @@ void Client::speak(const Json::Value &speak_data)
     QString base64 = toQString(speak_data[1]);
     QString text = Settings::fromBase64(base64);
 
+    static const QString prefix("<img width=14 height=14 src='image/system/chatface/");
+    static const QString suffix(".png'></img>");
+    text = text.replace("<#", prefix).replace("#>", suffix);
+
     if (who == ".") {
         QString line = tr("<font color='red'>System: %1</font>").arg(text);
         emit line_spoken(QString("<p style=\"margin:3px 2px;\">%1</p>").arg(line));
         return;
     }
+
+    emit player_spoken(who, QString("<p style=\"margin:3px 2px;\">%1</p>").arg(text));
 
     const ClientPlayer *from = getPlayer(who);
 

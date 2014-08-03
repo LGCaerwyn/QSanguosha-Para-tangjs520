@@ -178,7 +178,7 @@ QList<CardItem *> Photo::removeCardItems(const QList<int> &card_ids, Player::Pla
         result = _createCards(card_ids);
         updateHandcardNum();
     } else if (place == Player::PlaceEquip) {
-        result = removeEquips(card_ids, false);
+        result = removeEquips(card_ids);
     } else if (place == Player::PlaceDelayedTrick) {
         result = removeDelayedTricks(card_ids);
     }
@@ -202,7 +202,7 @@ bool Photo::_addCardItems(QList<CardItem *> &card_items, const CardsMoveStruct &
     foreach (CardItem *card_item, card_items)
         card_item->setHomeOpacity(homeOpacity);
     if (place == Player::PlaceEquip) {
-        addEquips(card_items, false);
+        addEquips(card_items);
         destroy = false;
     } else if (place == Player::PlaceDelayedTrick) {
         addDelayedTricks(card_items);
@@ -245,7 +245,7 @@ void Photo::updatePhase() {
         setFrame(S_FRAME_NO_FRAME);
 }
 
-void Photo::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
+void Photo::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
     painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 }
 

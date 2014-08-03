@@ -386,7 +386,7 @@ public:
             return false;
         }
         if (room->askForSkillInvoke(player, objectName()))
-            room->useCard(CardUseStruct(savage_assault, player, NULL));
+            room->useCard(CardUseStruct(savage_assault, player, QList<ServerPlayer *>()));
         return false;
     }
 };
@@ -517,11 +517,8 @@ public:
     virtual bool trigger(TriggerEvent, Room *room, ServerPlayer *player, QVariant &) const{
         ServerPlayer *opponent = room->getOtherPlayers(player).first();
         if (opponent->getPhase() != Player::NotActive) {
-            LogMessage log;
-            log.type = "#TriggerSkill";
-            log.from = player;
-            log.arg = objectName();
-            room->sendLog(log);
+            room->broadcastSkillInvoke(objectName());
+            room->sendCompulsoryTriggerLog(player, objectName());
 
             LogMessage log2;
             log2.type = "#TurnBroken";
@@ -619,7 +616,7 @@ public:
         return target && !target->isAlive() && target->hasSkill(objectName());
     }
 
-    virtual bool trigger(TriggerEvent triggerEvent, Room *room, ServerPlayer *player, QVariant &data) const{
+    virtual bool trigger(TriggerEvent triggerEvent, Room *room, ServerPlayer *player, QVariant &) const{
         if (triggerEvent == BeforeGameOverJudge) {
             player->setMark(objectName(), player->getCardCount());
         } else {
@@ -746,7 +743,7 @@ public:
 
     virtual bool trigger(TriggerEvent triggerEvent, Room *, ServerPlayer *player, QVariant &data) const{
         if (player->getPhase() == Player::Play && (triggerEvent == PreCardUsed || triggerEvent == CardResponded)) {
-            CardStar c = NULL;
+            const Card *c = NULL;
             if (triggerEvent == PreCardUsed)
                 c = data.value<CardUseStruct>().card;
             else
@@ -857,25 +854,15 @@ public:
                 n += (2 - origin);
             }
 
-            LogMessage log;
-            log.type = "#TriggerSkill";
-            log.from = player;
-            log.arg = "cuorui";
-            room->sendLog(log);
             room->broadcastSkillInvoke("cuorui");
-            room->notifySkillInvoked(player, "cuorui");
+            room->sendCompulsoryTriggerLog(player, "cuorui");
 
             data = data.toInt() + n;
         } else if (triggerEvent == EventPhaseChanging) {
             PhaseChangeStruct change = data.value<PhaseChangeStruct>();
             if (change.to == Player::Judge && player->getMark("CuoruiSkipJudge") == 0) {
-                LogMessage log;
-                log.type = "#TriggerSkill";
-                log.from = player;
-                log.arg = "cuorui";
-                room->sendLog(log);
                 room->broadcastSkillInvoke("cuorui");
-                room->notifySkillInvoked(player, "cuorui");
+                room->sendCompulsoryTriggerLog(player, "cuorui");
 
                 player->skip(Player::Judge);
                 player->addMark("CuoruiSkipJudge");
@@ -909,6 +896,7 @@ public:
     NiluanViewAsSkill(): OneCardViewAsSkill("niluan") {
         filter_pattern = ".|black";
         response_pattern = "@@niluan";
+        response_or_use = true;
     }
 
     virtual const Card *viewAs(const Card *originalCard) const{

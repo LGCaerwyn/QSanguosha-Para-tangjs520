@@ -161,6 +161,7 @@ CardUseStruct::CardUseStruct(const Card *card, ServerPlayer *from, QList<ServerP
 CardUseStruct::CardUseStruct(const Card *card, ServerPlayer *from, ServerPlayer *target, bool isOwnerUse) {
     this->card = card;
     this->from = from;
+    Q_ASSERT(target != NULL);
     this->to << target;
     this->m_isOwnerUse = isOwnerUse;
     this->m_addHistory = true;
@@ -192,8 +193,8 @@ void CardUseStruct::parse(const QString &str, Room *room) {
     QString card_str = words.at(0);
     QString target_str = ".";
 
-    if (words.length() == 2 && !words.at(1).isEmpty()) 
-        target_str = words.at(1);    
+    if (words.length() == 2 && !words.at(1).isEmpty())
+        target_str = words.at(1);
 
     card = Card::Parse(card_str);
 

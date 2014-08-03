@@ -13,7 +13,7 @@
 using namespace QSanProtocol;
 using namespace QSanProtocol::Utils;
 
-const int ServerPlayer::S_NUM_SEMAPHORES = 6;
+const int ServerPlayer::S_NUM_SEMAPHORES = NUMBER_OF_SEMAS;
 
 ServerPlayer::ServerPlayer(Room *room)
     : Player(room), m_isClientResponseReady(false), m_isWaitingReply(false),
@@ -83,8 +83,8 @@ const Card *ServerPlayer::getRandomHandCard() const{
     return handcards.at(index);
 }
 
-void ServerPlayer::obtainCard(const Card *card, bool unhide) {
-    CardMoveReason reason(CardMoveReason::S_REASON_GOTCARD, objectName());
+void ServerPlayer::obtainCard(const Card *card, bool unhide, int obtainReason) {
+    CardMoveReason reason(obtainReason, objectName());
     room->obtainCard(this, card, reason, unhide);
 }
 
@@ -358,7 +358,7 @@ void ServerPlayer::removeCard(const Card *card, Place place) {
     case PlaceSpecial: {
             int card_id = card->getEffectiveId();
             QString pile_name = getPileName(card_id);
-            
+
             //@todo: sanity check required
             if (!pile_name.isEmpty())
                 piles[pile_name].removeOne(card_id);
@@ -539,14 +539,14 @@ bool ServerPlayer::pindian(ServerPlayer *target, const QString &reason, const Ca
     room->sendLog(log2);
 
     RoomThread *thread = room->getThread();
-    PindianStar pindian_star = &pindian_struct;
-    QVariant data = QVariant::fromValue(pindian_star);
+    PindianStruct *pindian_ptr = &pindian_struct;
+    QVariant data = QVariant::fromValue(pindian_ptr);
     thread->trigger(PindianVerifying, room, this, data);
 
-    PindianStar new_star = data.value<PindianStar>();
-    pindian_struct.from_number = new_star->from_number;
-    pindian_struct.to_number = new_star->to_number;
-    pindian_struct.success = (new_star->from_number > new_star->to_number);
+    PindianStruct *new_pindian_ptr = data.value<PindianStruct *>();
+    pindian_struct.from_number = new_pindian_ptr->from_number;
+    pindian_struct.to_number = new_pindian_ptr->to_number;
+    pindian_struct.success = (new_pindian_ptr->from_number > new_pindian_ptr->to_number);
 
     log.type = pindian_struct.success ? "#PindianSuccess" : "#PindianFailure";
     log.from = this;
@@ -565,8 +565,8 @@ bool ServerPlayer::pindian(ServerPlayer *target, const QString &reason, const Ca
     arg[6] = toJsonString(reason);
     room->doBroadcastNotify(S_COMMAND_LOG_EVENT, arg);
 
-    pindian_star = &pindian_struct;
-    data = QVariant::fromValue(pindian_star);
+    pindian_ptr = &pindian_struct;
+    data = QVariant::fromValue(pindian_ptr);
     thread->trigger(Pindian, room, this, data);
 
     moves.clear();
@@ -1076,8 +1076,7 @@ void ServerPlayer::marshal(ServerPlayer *player) const{
     }
 
     //如果本玩家的当前状态是离线、托管或是电脑，则需要通知刚刚通过断线重连进入的玩家
-    const QString &currentState = getState();
-    if (currentState != "online") {
+    if (!isOnline()) {
         room->notifyProperty(player, this, "state");
     }
 }

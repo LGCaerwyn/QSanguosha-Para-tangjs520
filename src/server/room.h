@@ -102,7 +102,7 @@ public:
     bool cardEffect(const CardEffectStruct &effect);
     bool isJinkEffected(ServerPlayer *user, const Card *jink);
     void judge(JudgeStruct &judge_struct);
-    void sendJudgeResult(const JudgeStar judge);
+    void sendJudgeResult(const JudgeStruct *judge);
     QList<int> getNCards(int n, bool update_pile_number = true);
     ServerPlayer *getLord() const;
     void askForGuanxing(ServerPlayer *zhuge, const QList<int> &cards, GuanxingType guanxing_type = GuanxingBothSides);
@@ -117,10 +117,11 @@ public:
 
     void sendLog(const LogMessage &log, const QList<ServerPlayer *> &players = QList<ServerPlayer *>());
     void sendLog(const LogMessage &log, ServerPlayer *player);
+    void sendCompulsoryTriggerLog(ServerPlayer *player, const QString &skill_name, bool notify_skill = true);
 
     void showCard(ServerPlayer *player, int card_id, ServerPlayer *only_viewer = NULL);
     void showAllCards(ServerPlayer *player, ServerPlayer *to = NULL);
-    void retrial(const Card *card, ServerPlayer *player, JudgeStar judge,
+    void retrial(const Card *card, ServerPlayer *player, JudgeStruct *judge,
                  const QString &skill_name, bool exchange = false);
 
     // Ask a player to send a server request and returns the client response. Call is blocking until client
@@ -174,7 +175,7 @@ public:
     // Notify a player of a event by sending S_SERVER_NOTIFICATION packets. No reply should be expected from
     // the client for S_SERVER_NOTIFICATION as it's a one way notice. Any message from the client in reply to this call
     // will be rejected.
-    bool doNotify(ServerPlayer *player, QSanProtocol::CommandType command, const Json::Value &arg); 
+    bool doNotify(ServerPlayer *player, QSanProtocol::CommandType command, const Json::Value &arg);
 
     // Broadcast a event to a list of players by sending S_SERVER_NOTIFICATION packets. No replies should be expected from
     // the clients for S_SERVER_NOTIFICATION as it's a one way notice. Any message from the client in reply to this call
@@ -211,7 +212,9 @@ public:
     // Notification functions
     bool notifyMoveFocus(ServerPlayer *player);
     bool notifyMoveFocus(ServerPlayer *player, QSanProtocol::CommandType command);
-    bool notifyMoveFocus(const QList<ServerPlayer *> &players, QSanProtocol::CommandType command, QSanProtocol::Countdown countdown);
+    bool notifyMoveFocus(const QList<ServerPlayer *> &players, QSanProtocol::CommandType command);
+    bool notifyMoveFocus(const QList<ServerPlayer *> &players, QSanProtocol::CommandType command,
+        const QSanProtocol::Countdown &countdown);
 
     // Notify client side to move cards from one place to another place. A movement should always be completed by
     // calling notifyMoveCards in pairs, one with isLostPhase equaling true followed by one with isLostPhase
@@ -240,6 +243,9 @@ public:
     void broadcastSkillInvoke(const QString &skillName, int type);
     void broadcastSkillInvoke(const QString &skillName, bool isMale, int type);
     void doLightbox(const QString &lightboxName, int duration = 2000, int pixelSize = 0);
+    void doLightbox(const QList<ServerPlayer *> &winPlayers, const QString &winLightboxName,
+        const QList<ServerPlayer *> &losePlayers, const QString &loseLightboxName,
+        int duration = 2000, int pixelSize = 0);
 
     void doAnimate(QSanProtocol::AnimateType type, const QString &arg1 = QString(),
         const QString &arg2 = QString(),
@@ -393,7 +399,7 @@ protected:
 private:
     struct _MoveSourceClassifier {
         inline _MoveSourceClassifier(const CardsMoveStruct &move) {
-            m_from = move.from; m_from_place = move.from_place; 
+            m_from = move.from; m_from_place = move.from_place;
             m_from_pile_name = move.from_pile_name; m_from_player_name = move.from_player_name;
         }
         inline void copyTo(CardsMoveStruct &move) {
@@ -502,9 +508,9 @@ private:
 
     QTime _m_timeSinceLastSurrenderRequest; // Timer used to ensure that surrender polls are not initiated too frequently
     bool _m_isFirstSurrenderRequest; // We allow the first surrender poll to go through regardless of the timer.
-    
+
     //helper variables for race request function
-    bool _m_raceStarted; 
+    bool _m_raceStarted;
     ServerPlayer *_m_raceWinner;
 
     QMap<int, Player::Place> place_map;
@@ -526,8 +532,10 @@ private:
     static QString generatePlayerName();
     void prepareForStart();
     void assignGeneralsForPlayers(const QList<ServerPlayer *> &to_assign);
+    void assignGeneralsForPlayersOfJianGeDefenseMode(const QList<ServerPlayer *> &to_assign);
 
     void chooseGenerals(const QList<ServerPlayer *> &playerList = QList<ServerPlayer *>());
+    void chooseGeneralsOfJianGeDefenseMode();
 
     AI *cloneAI(ServerPlayer *player);
     void broadcast(const QString &message, ServerPlayer *except = NULL);

@@ -33,6 +33,7 @@ class ChoosePlayerSkill;
 class GuanxingBox;
 class ChatWidget;
 class EffectAnimation;
+class BubbleChatBox;
 
 class ScriptExecutor: public QDialog {
     Q_OBJECT
@@ -100,7 +101,7 @@ public:
 public slots:
     void setTime(int secs);
     void setSpeed(qreal speed);
-    
+
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     static const int S_BUTTON_GAP = 3;
@@ -234,8 +235,8 @@ private:
     void _getSceneSizes(QSize &minSize, QSize &maxSize);
     bool _shouldIgnoreDisplayMove(CardsMoveStruct &movement);
     bool _processCardsMove(CardsMoveStruct &move, bool isLost);
-    bool _m_isMouseButtonDown;
-    bool _m_isInDragAndUseMode;
+    //bool _m_isMouseButtonDown;
+    //bool _m_isInDragAndUseMode;
     const QSanRoomSkin::RoomLayout *_m_roomLayout;
     const QSanRoomSkin::PhotoLayout *_m_photoLayout;
     const QSanRoomSkin::CommonLayout *_m_commonLayout;
@@ -267,10 +268,10 @@ private:
 
     QGraphicsRectItem *pausing_item;
     QGraphicsSimpleTextItem *pausing_text;
-    
+
     QList<QGraphicsPixmapItem *> role_items;
     CardContainer *card_container;
-    
+
     QList<QSanSkillButton *> m_skillButtons;
 
     ResponseSkill *response_skill;
@@ -301,6 +302,8 @@ private:
 
     //新增一个计时器Label，用于显示游戏耗时
     TimerLabel *m_timerLabel;
+
+    QMap<QString, BubbleChatBox *> m_bubbleChatBoxs;
 
     // for 3v3 & 1v1 mode
     QSanSelectableItem *selector_box;
@@ -350,6 +353,8 @@ private:
     void showPindianBox(const QString &from_name, int from_id, const QString &to_name, int to_id, const QString &reason);
     void setChatBoxVisible(bool show);
 
+    QRect getBubbleChatBoxShowArea(const QString &who) const;
+
     // animation related functions
     typedef void (RoomScene::*AnimationFunc)(const QString &, const QStringList &);
     QGraphicsObject *getAnimationObject(const QString &name) const;
@@ -387,7 +392,7 @@ private slots:
     void startInXs();
     void changeHp(const QString &who, int delta, DamageStruct::Nature nature, bool losthp);
     void changeMaxHp(const QString &who, int delta);
-    void moveFocus(const QStringList &who, QSanProtocol::Countdown);
+    void moveFocus(const QStringList &who, const QSanProtocol::Countdown &countdown);
     void setEmotion(const QString &who, const QString &emotion);
     void showSkillInvocation(const QString &who, const QString &skill_name);
     void doAnimation(int name, const QStringList &args);
@@ -404,7 +409,7 @@ private slots:
     void onGameOver();
     void onStandoff();
     void appendChatEdit(QString txt);
-    void appendChatBox(QString txt);
+    void showBubbleChatBox(const QString &who, const QString &line);
 
     //animations
     void onEnabledChange();

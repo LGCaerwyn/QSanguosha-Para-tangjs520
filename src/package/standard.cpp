@@ -124,16 +124,19 @@ void GlobalEffect::onUse(Room *room, const CardUseStruct &card_use) const{
     foreach (ServerPlayer *player, all_players) {
         const ProhibitSkill *skill = room->isProhibited(source, player, this);
         if (skill) {
-            LogMessage log;
-            log.type = "#SkillAvoid";
-            log.from = player;
-            log.arg = skill->objectName();
-            log.arg2 = objectName();
-            room->sendLog(log);
+            if (skill->isVisible()) {
+                LogMessage log;
+                log.type = "#SkillAvoid";
+                log.from = player;
+                log.arg = skill->objectName();
+                log.arg2 = objectName();
+                room->sendLog(log);
 
-            room->broadcastSkillInvoke(skill->objectName());
-        } else
+                room->broadcastSkillInvoke(skill->objectName());
+            }
+        } else {
             targets << player;
+        }
     }
 
     CardUseStruct use = card_use;
@@ -180,16 +183,19 @@ void AOE::onUse(Room *room, const CardUseStruct &card_use) const{
     foreach (ServerPlayer *player, other_players) {
         const ProhibitSkill *skill = room->isProhibited(source, player, this);
         if (skill) {
-            LogMessage log;
-            log.type = "#SkillAvoid";
-            log.from = player;
-            log.arg = skill->objectName();
-            log.arg2 = objectName();
-            room->sendLog(log);
+            if (skill->isVisible()) {
+                LogMessage log;
+                log.type = "#SkillAvoid";
+                log.from = player;
+                log.arg = skill->objectName();
+                log.arg2 = objectName();
+                room->sendLog(log);
 
-            room->broadcastSkillInvoke(skill->objectName());
-        } else
+                room->broadcastSkillInvoke(skill->objectName());
+            }
+        } else {
             targets << player;
+        }
     }
 
     CardUseStruct use = card_use;
@@ -201,7 +207,7 @@ QString SingleTargetTrick::getSubtype() const{
     return "single_target_trick";
 }
 
-bool SingleTargetTrick::targetFilter(const QList<const Player *> &targets, const Player *to_select, const Player *Self) const{
+bool SingleTargetTrick::targetFilter(const QList<const Player *> &, const Player *, const Player *) const{
     return true;
 }
 
@@ -301,14 +307,16 @@ void DelayedTrick::onNullified(ServerPlayer *target) const{
 
             const ProhibitSkill *skill = room->isProhibited(target, player, this);
             if (skill) {
-                LogMessage log;
-                log.type = "#SkillAvoid";
-                log.from = player;
-                log.arg = skill->objectName();
-                log.arg2 = objectName();
-                room->sendLog(log);
+                if (skill->isVisible()) {
+                    LogMessage log;
+                    log.type = "#SkillAvoid";
+                    log.from = player;
+                    log.arg = skill->objectName();
+                    log.arg2 = objectName();
+                    room->sendLog(log);
 
-                room->broadcastSkillInvoke(skill->objectName());
+                    room->broadcastSkillInvoke(skill->objectName());
+                }
                 continue;
             }
 

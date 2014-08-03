@@ -69,6 +69,10 @@ public:
     QStringList BossEndlessSkills;
     QMap<QString, int> BossExpSkills;
 
+    QMap<QString, QString> JianGeDefenseKingdoms;
+    QMap<QString, QStringList> JianGeDefenseMachine;
+    QMap<QString, QStringList> JianGeDefenseSoul;
+
     // client side
     QString HostAddress;
     QString UserName;
@@ -86,6 +90,7 @@ public:
     int AutoCloseCardContainerDelaySeconds;
     bool RandomPlayBGM;
     bool ShowMsgBoxWhenExit;
+    int BubbleChatBoxDelaySeconds;
 
     int OperationTimeout;
     bool OperationNoLimit;

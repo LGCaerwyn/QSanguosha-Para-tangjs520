@@ -83,8 +83,8 @@ void CardContainer::fillCards(const QList<int> &card_ids, const QList<int> &disa
             } else {
                 pos = pos2;
                 pos.setX(pos.x() + (i - half) * real_skip);
-            }        
-        }      
+            }
+        }
         CardItem *item = items[i];
         item->setPos(pos);
         item->setHomePos(pos);
@@ -150,7 +150,7 @@ void CardContainer::freezeCards(bool is_frozen) {
         item->setFrozen(is_frozen);
 }
 
-QList<CardItem *> CardContainer::removeCardItems(const QList<int> &card_ids, Player::Place place) {
+QList<CardItem *> CardContainer::removeCardItems(const QList<int> &card_ids, Player::Place) {
     QList<CardItem *> result;
     foreach (int card_id, card_ids) {
         CardItem *to_take = NULL;

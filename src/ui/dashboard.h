@@ -35,7 +35,7 @@ public:
     int getMiddleWidth();
 
     void hideControlButtons();
-    virtual void showProgressBar(QSanProtocol::Countdown countdown);
+    virtual void showProgressBar(const QSanProtocol::Countdown &countdown);
 
     QRectF getProgressBarSceneBoundingRect() const {
         return _m_progressBarItem->sceneBoundingRect();
@@ -168,7 +168,7 @@ protected:
     // sync objects
     QMutex m_mutex;
     QMutex m_mutexEnableCards;
-    
+
     QSanButton *m_btnReverseSelection;
     QSanButton *m_btnSortHandcard;
     QSanButton *m_btnNoNullification;

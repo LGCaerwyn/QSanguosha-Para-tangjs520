@@ -115,11 +115,11 @@ public:
         // equips
         QRect m_equipAreas[S_EQUIP_AREA_LENGTH];
         QRect m_equipImageArea;
-        QRect m_equipTextArea;
         QRect m_equipSuitArea;
-        QRect m_equipDistanceArea;
         QRect m_equipPointArea;
-        SanShadowTextFont m_equipFont;
+        QRect m_horseImageArea;
+        QRect m_horseSuitArea;
+        QRect m_horsePointArea;
         SanShadowTextFont m_equipBlackPointFont;
         SanShadowTextFont m_equipRedPointFont;
 
@@ -311,7 +311,7 @@ public:
     static const char *S_SKIN_KEY_DASHBOARD;
     static const char *S_SKIN_KEY_PHOTO;
     static const char *S_SKIN_KEY_COMMON;
-    static const char *S_SKIN_KEY_ROOM; 
+    static const char *S_SKIN_KEY_ROOM;
 
     // button
     static const char *S_SKIN_KEY_BUTTON;

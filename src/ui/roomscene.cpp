@@ -22,6 +22,7 @@
 #include "graphicspixmaphoveritem.h"
 #include "mainwindow.h"
 #include "sanuiutils.h"
+#include "bubblechatbox.h"
 
 #include <QSequentialAnimationGroup>
 #include <QGraphicsSceneMouseEvent>
@@ -58,7 +59,8 @@ RolesBoxItem::RolesBoxItem()
 }
 
 RoomScene::RoomScene(QMainWindow *main_window)
-    : main_window(main_window), game_started(false)
+    : main_window(main_window), game_started(false),
+    pindian_success(false), _m_currentStage(0)
 {
     setParent(main_window);
 
@@ -154,7 +156,8 @@ RoomScene::RoomScene(QMainWindow *main_window)
     connect(ClientInstance, SIGNAL(player_revived(QString)), this, SLOT(revivePlayer(QString)));
     connect(ClientInstance, SIGNAL(card_shown(QString, int)), this, SLOT(showCard(QString, int)));
     connect(ClientInstance, SIGNAL(gongxin(QList<int>, bool, QList<int>)), this, SLOT(doGongxin(QList<int>, bool, QList<int>)));
-    connect(ClientInstance, SIGNAL(focus_moved(QStringList, QSanProtocol::Countdown)), this, SLOT(moveFocus(QStringList, QSanProtocol::Countdown)));
+    connect(ClientInstance, SIGNAL(focus_moved(QStringList, const QSanProtocol::Countdown &)),
+        this, SLOT(moveFocus(QStringList, const QSanProtocol::Countdown &)));
     connect(ClientInstance, SIGNAL(emotion_set(QString, QString)), this, SLOT(setEmotion(QString, QString)));
     connect(ClientInstance, SIGNAL(skill_invoked(QString, QString)), this, SLOT(showSkillInvocation(QString, QString)));
     connect(ClientInstance, SIGNAL(skill_acquired(const ClientPlayer *, QString)), this, SLOT(acquireSkill(const ClientPlayer *, QString)));
@@ -235,7 +238,9 @@ RoomScene::RoomScene(QMainWindow *main_window)
     chat_box_widget->setParent(this);
     chat_box->setReadOnly(true);
     chat_box->setTextColor(Config.TextEditColor);
-    connect(ClientInstance, SIGNAL(line_spoken(QString)), this, SLOT(appendChatBox(QString)));
+    connect(ClientInstance, SIGNAL(line_spoken(const QString &)), chat_box, SLOT(append(const QString &)));
+    connect(ClientInstance, SIGNAL(player_spoken(const QString &, const QString &)),
+        this, SLOT(showBubbleChatBox(const QString &, const QString &)));
 
     // chat edit
     chat_edit = new QLineEdit;
@@ -358,7 +363,7 @@ RoomScene::RoomScene(QMainWindow *main_window)
     pausing_item->setOpacity(0.36);
     pausing_item->setZValue(1002.0);
 
-    QFont font= Config.BigFont;
+    QFont font = Config.BigFont;
     font.setPixelSize(100);
     pausing_text->setFont(font);
     pausing_text->setBrush(Qt::white);
@@ -401,7 +406,9 @@ void RoomScene::handleGameEvent(const Json::Value &arg) {
             QString huashenGeneral = arg[2].asCString();
             QString huashenSkill = arg[3].asCString();
             PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-            container->startHuaShen(huashenGeneral, huashenSkill);
+            if (container) {
+                container->startHuaShen(huashenGeneral, huashenSkill);
+            }
             break;
         }
     case S_GAME_EVENT_PLAY_EFFECT: {
@@ -451,9 +458,12 @@ void RoomScene::handleGameEvent(const Json::Value &arg) {
 
             // stop huashen animation
             PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-            if (!player->hasSkill("huashen"))
-                container->stopHuaShen();
-            container->updateAvatarTooltip();
+            if (container) {
+                if (!player->hasSkill("huashen")) {
+                    container->stopHuaShen();
+                }
+                container->updateAvatarTooltip();
+            }
             break;
         }
     case S_GAME_EVENT_ACQUIRE_SKILL: {
@@ -465,7 +475,9 @@ void RoomScene::handleGameEvent(const Json::Value &arg) {
             acquireSkill(player, skill_name);
 
             PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-            container->updateAvatarTooltip();
+            if (container) {
+                container->updateAvatarTooltip();
+            }
             break;
         }
     case S_GAME_EVENT_ADD_SKILL: {
@@ -476,7 +488,9 @@ void RoomScene::handleGameEvent(const Json::Value &arg) {
             player->addSkill(skill_name);
 
             PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-            container->updateAvatarTooltip();
+            if (container) {
+                container->updateAvatarTooltip();
+            }
             break;
         }
     case S_GAME_EVENT_LOSE_SKILL: {
@@ -487,7 +501,9 @@ void RoomScene::handleGameEvent(const Json::Value &arg) {
             player->loseSkill(skill_name);
 
             PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-            container->updateAvatarTooltip();
+            if (container) {
+                container->updateAvatarTooltip();
+            }
             break;
         }
     case S_GAME_EVENT_PREPARE_SKILL:
@@ -535,7 +551,9 @@ void RoomScene::handleGameEvent(const Json::Value &arg) {
                     detachSkill(skill->objectName());
                 if (oldHero->hasSkill("huashen")) {
                     PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-                    container->stopHuaShen();
+                    if (container) {
+                        container->stopHuaShen();
+                    }
                 }
             }
 
@@ -544,7 +562,9 @@ void RoomScene::handleGameEvent(const Json::Value &arg) {
     case S_GAME_EVENT_PLAYER_REFORM: {
             ClientPlayer *player = ClientInstance->getPlayer(arg[1].asCString());
             PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-            container->updateReformState();
+            if (container) {
+                container->updateReformState();
+            }
             break;
         }
     case S_GAME_EVENT_SKILL_INVOKED: {
@@ -557,7 +577,9 @@ void RoomScene::handleGameEvent(const Json::Value &arg) {
             if (!player || !player->hasSkill(skill_name)) return;
 
             PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-            container->showSkillName(skill_name);
+            if (container) {
+                container->showSkillName(skill_name);
+            }
 
             //播放技能特效动画
             QString skillEmotion = QString("skill/%1").arg(skill_name);
@@ -596,7 +618,9 @@ void RoomScene::handleGameEvent(const Json::Value &arg) {
         QSanProtocol::Utils::tryParse(arg[2], anJiangNames);
         player->tag["anjiang_generals"] = QVariant::fromValue(anJiangNames);
         PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-        container->updateAvatarTooltip();
+        if (container) {
+            container->updateAvatarTooltip();
+        }
         break;
     }
 
@@ -658,7 +682,7 @@ QRectF ReplayerControlBar::boundingRect() const{
     return QRectF(0, 0, S_BUTTON_WIDTH * 4 + S_BUTTON_GAP * 3, S_BUTTON_HEIGHT);
 }
 
-void ReplayerControlBar::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
+void ReplayerControlBar::paint(QPainter *, const QStyleOptionGraphicsItem *, QWidget *) {
 }
 
 ReplayerControlBar::ReplayerControlBar(Dashboard *dashboard) {
@@ -1078,6 +1102,14 @@ void RoomScene::arrangeSeats(const QList<const ClientPlayer *> &seats) {
             item2player.insert(photo, photo->getPlayer());
             connect(photo, SIGNAL(selected_changed()), this, SLOT(updateSelectedTargets()));
             connect(photo, SIGNAL(enable_changed()), this, SLOT(onEnabledChange()));
+        }
+    }
+
+    //玩家座位确定后需要同步更新气泡聊天框的位置
+    QList<QString> names = name2photo.keys();
+    foreach (const QString &who, names) {
+        if (m_bubbleChatBoxs.contains(who)) {
+            m_bubbleChatBoxs[who]->setArea(getBubbleChatBoxShowArea(who));
         }
     }
 }
@@ -1924,7 +1956,6 @@ bool RoomScene::_processCardsMove(CardsMoveStruct &move, bool isLost) {
 }
 
 void RoomScene::getCards(int moveId, QList<CardsMoveStruct> card_moves) {
-    int count = 0;
     for (int i = 0; i < card_moves.size(); ++i) {
         CardsMoveStruct &movement = card_moves[i];
         bool skipMove = _processCardsMove(movement, false);
@@ -1932,8 +1963,7 @@ void RoomScene::getCards(int moveId, QList<CardsMoveStruct> card_moves) {
         if (_shouldIgnoreDisplayMove(movement)) continue;
         card_container->m_currentPlayer = (ClientPlayer *)movement.to;
         GenericCardContainer *to_container = _getGenericCardContainer(movement.to_place, movement.to);
-        QList<CardItem *> cards = _m_cardsMoveStash[moveId][count];
-        ++count;
+        QList<CardItem *> cards = _m_cardsMoveStash[moveId].value(i);
         for (int j = 0; j < cards.size(); ++j) {
             CardItem *card = cards[j];
             card->setFlag(QGraphicsItem::ItemIsMovable, false);
@@ -1948,8 +1978,10 @@ void RoomScene::getCards(int moveId, QList<CardsMoveStruct> card_moves) {
             card->setFootnote(_translateMovement(movement));
             card->hideFootnote();
         }
-        bringToFront(to_container);
-        to_container->addCardItems(cards, movement);
+        if (to_container) {
+            bringToFront(to_container);
+            to_container->addCardItems(cards, movement);
+        }
         keepGetCardLog(movement);
     }
     _m_cardsMoveStash[moveId].clear();
@@ -1963,11 +1995,13 @@ void RoomScene::loseCards(int moveId, QList<CardsMoveStruct> card_moves) {
         if (_shouldIgnoreDisplayMove(movement)) continue;
         card_container->m_currentPlayer = (ClientPlayer *)movement.to;
         GenericCardContainer *from_container = _getGenericCardContainer(movement.from_place, movement.from);
-        QList<CardItem *> cards = from_container->removeCardItems(movement.card_ids, movement.from_place);
-        foreach (CardItem *card, cards)
-            card->setEnabled(false);
-
-        _m_cardsMoveStash[moveId].append(cards);
+        if (from_container) {
+            QList<CardItem *> cards = from_container->removeCardItems(movement.card_ids, movement.from_place);
+            foreach (CardItem *card, cards) {
+                card->setEnabled(false);
+            }
+            _m_cardsMoveStash[moveId].append(cards);
+        }
         keepLoseCardLog(movement);
     }
 }
@@ -2955,16 +2989,50 @@ void RoomScene::onGameOver() {
 #ifdef AUDIO_SUPPORT
     QString win_effect;
     if (victory) {
-        win_effect = "win";
         foreach (const Player *player, ClientInstance->getPlayers()) {
-            if (player->property("win").toBool() && player->getGeneralName().contains("caocao")) {
-                Audio::stopAll();
-                win_effect = "win-cc";
+            if (player->property("win").toBool()) {
+                if (player->getGeneralName().contains("caocao")) {
+                    win_effect = "win-cc";
+                }
+                else if (player->getGeneralName().contains("liubei")) {
+                    win_effect = "win-liubei";
+                }
+                else if (player->getGeneralName().contains("sunquan")) {
+                    win_effect = "win-sunquan";
+                }
+                else if (player->getGeneralName().contains("zhangjiao")) {
+                    win_effect = "win-zhangjiao";
+                }
+                else if (player->getGeneralName().contains("yuanshao")) {
+                    win_effect = "win-yuanshao";
+                }
+                else if (player->getGeneralName().contains("caopi")) {
+                    win_effect = "win-caopi";
+                }
+                else if (player->getGeneralName().contains("dongzhuo")) {
+                    win_effect = "win-dongzhuouo";
+                }
+                else if (player->getGeneralName().contains("liushan")) {
+                    win_effect = "win-liushan";
+                }
+                else if (player->getGeneralName().contains("sunce")) {
+                    win_effect = "win-sunce";
+                }
+
                 break;
             }
         }
-    } else
+
+        if (win_effect.isEmpty()) {
+            win_effect = "win";
+        }
+        else {
+            Audio::stopAll();
+        }
+    }
+    else {
         win_effect = "lose";
+    }
 
     Sanguosha->playSystemAudioEffect(win_effect);
 #endif
@@ -3398,7 +3466,9 @@ void RoomScene::killPlayer(const QString &who) {
     ClientPlayer *player = ClientInstance->getPlayer(who);
     if (player) {
         PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-        container->stopHuaShen();
+        if (container) {
+            container->stopHuaShen();
+        }
     }
 
     if (Config.EnableEffects && Config.EnableLastWord && !Self->hasFlag("marshalling"))
@@ -3437,22 +3507,24 @@ void RoomScene::takeAmazingGrace(ClientPlayer *taker, int card_id, bool move_car
 
     if (taker) {
         GenericCardContainer *container = _getGenericCardContainer(Player::PlaceHand, taker);
-        bringToFront(container);
-        if (move_cards) {
-            QString type = "$TakeAG";
-            QString from_general = taker->objectName();
-            QString card_str = QString::number(card_id);
-            log_box->appendLog(type, from_general, QStringList(), card_str);
-            CardsMoveStruct move;
-            move.card_ids.append(card_id);
-            move.from_place = Player::PlaceWuGu;
-            move.to_place = Player::PlaceHand;
-            move.to = taker;
+        if (container) {
+            bringToFront(container);
+            if (move_cards) {
+                QString type = "$TakeAG";
+                QString from_general = taker->objectName();
+                QString card_str = QString::number(card_id);
+                log_box->appendLog(type, from_general, QStringList(), card_str);
+                CardsMoveStruct move;
+                move.card_ids.append(card_id);
+                move.from_place = Player::PlaceWuGu;
+                move.to_place = Player::PlaceHand;
+                move.to = taker;
 
-            QList<CardItem *> items;
-            items << copy;
-            container->addCardItems(items, move);
-            return;
+                QList<CardItem *> items;
+                items << copy;
+                container->addCardItems(items, move);
+                return;
+            }
         }
     }
 
@@ -3466,16 +3538,18 @@ void RoomScene::showCard(const QString &player_name, int card_id) {
     card_ids << card_id;
     const ClientPlayer *player = ClientInstance->getPlayer(player_name);
 
-    GenericCardContainer *container = _getGenericCardContainer(Player::PlaceHand, (Player *)player);
-    QList<CardItem *> card_items = container->cloneCardItems(card_ids);
-    CardMoveReason reason(CardMoveReason::S_REASON_DEMONSTRATE, player->objectName());
-    bringToFront(m_tablePile);
-    CardsMoveStruct move;
-    move.from_place = Player::PlaceHand;
-    move.to_place = Player::PlaceTable;
-    move.reason = reason;
-    card_items[0]->setFootnote(_translateMovement(move));
-    m_tablePile->addCardItems(card_items, move);
+    GenericCardContainer *container = _getGenericCardContainer(Player::PlaceHand, player);
+    if (container) {
+        QList<CardItem *> card_items = container->cloneCardItems(card_ids);
+        CardMoveReason reason(CardMoveReason::S_REASON_DEMONSTRATE, player->objectName());
+        bringToFront(m_tablePile);
+        CardsMoveStruct move;
+        move.from_place = Player::PlaceHand;
+        move.to_place = Player::PlaceTable;
+        move.reason = reason;
+        card_items[0]->setFootnote(_translateMovement(move));
+        m_tablePile->addCardItems(card_items, move);
+    }
 
     QString card_str = QString::number(card_id);
     log_box->appendLog("$ShowCard", player->objectName(), QStringList(), card_str);
@@ -3579,7 +3653,7 @@ void RoomScene::speak() {
             }
             QString line = tr("<font color='%1'>[%2] said: %3 </font>")
                            .arg(Config.TextEditColor.name()).arg(title).arg(text);
-            appendChatBox(QString("<p style=\"margin:3px 2px;\">%1</p>").arg(line));
+            chat_box->append(QString("<p style=\"margin:3px 2px;\">%1</p>").arg(line));
         }
     }
     chat_edit->clear();
@@ -3686,6 +3760,8 @@ void KOFOrderBox::killPlayer(const QString &general_name) {
 }
 
 void RoomScene::onGameStart() {
+    _cancelAllFocus();
+
     if (ServerInfo.EnableHegemony) {
         foreach (Photo *photo, photos) {
             photo->updateAvatarTooltip();
@@ -3766,7 +3842,7 @@ void RoomScene::_cancelAllFocus() {
     }
 }
 
-void RoomScene::moveFocus(const QStringList &players, Countdown countdown) {
+void RoomScene::moveFocus(const QStringList &players, const Countdown &countdown) {
     _cancelAllFocus();
     foreach (const QString &player, players) {
         Photo *photo = name2photo[player];
@@ -4020,7 +4096,9 @@ void RoomScene::doHuashen(const QString &, const QStringList &args) {
     move.to_pile_name = "huashen";
 
     GenericCardContainer *container = _getGenericCardContainer(Player::PlaceHand, player);
-    container->addCardItems(generals, move);
+    if (container) {
+        container->addCardItems(generals, move);
+    }
 
     if (owner)
         Self->tag["Huashens"] = huashen_list;
@@ -4084,16 +4162,16 @@ void RoomScene::doAnimation(int name, const QStringList &args) {
 }
 
 void RoomScene::showServerInformation() {
-    QDialog *dialog = new QDialog(main_window);
-    dialog->setWindowTitle(tr("Server information"));
+    QDialog dialog(main_window);
+    dialog.setWindowTitle(tr("Server information"));
 
     QHBoxLayout *layout = new QHBoxLayout;
     ServerInfoWidget *widget = new ServerInfoWidget;
-    widget->fill(ServerInfo, Config.HostAddress);
+    widget->fill(ServerInfo);
     layout->addWidget(widget);
-    dialog->setLayout(layout);
+    dialog.setLayout(layout);
 
-    dialog->show();
+    dialog.exec();
 }
 
 void RoomScene::surrender() {
@@ -4569,15 +4647,8 @@ void RoomScene::updateRolesBox() {
 }
 
 void RoomScene::appendChatEdit(QString txt) {
-    chat_edit->setText(chat_edit->text() +  " " + txt);
+    chat_edit->setText(chat_edit->text() + txt);
     chat_edit->setFocus();
-}
-
-void RoomScene::appendChatBox(QString txt) {
-    QString prefix = "<img src='image/system/chatface/";
-    QString suffix = ".png'></img>";
-    txt = txt.replace("<#", prefix).replace("#>", suffix);
-    chat_box->append(txt);
 }
 
 void RoomScene::setChatBoxVisible(bool show) {
@@ -4708,7 +4779,7 @@ void RoomScene::getActualGeneralNameAndSkinIndex(ClientPlayer *player, const QSt
     generalName1 = player->getGeneralName();
     if (generalName1 == "zuoci" && skillName != "huashen" && skillName != "xinsheng") {
         PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-        if (NULL != container) {
+        if (container) {
             generalName1 = container->getHuaShenGeneralName();
         }
     }
@@ -4717,7 +4788,7 @@ void RoomScene::getActualGeneralNameAndSkinIndex(ClientPlayer *player, const QSt
     generalName2 = player->getGeneral2Name();
     if (generalName2 == "zuoci" && skillName != "huashen" && skillName != "xinsheng") {
         PlayerCardContainer *container = (PlayerCardContainer *)_getGenericCardContainer(Player::PlaceHand, player);
-        if (NULL != container) {
+        if (container) {
             generalName2 = container->getHuaShenGeneralName();
         }
     }
@@ -4806,6 +4877,33 @@ void RoomScene::deletePromptInfoItem()
 bool RoomScene::isReturnMainMenuButtonVisible() const
 {
     return (return_main_menu && return_main_menu->isVisible());
+}
+
+void RoomScene::showBubbleChatBox(const QString &who, const QString &line)
+{
+    if (!m_bubbleChatBoxs.contains(who)) {
+        BubbleChatBox *bubbleChatBox = new BubbleChatBox(getBubbleChatBoxShowArea(who));
+        addItem(bubbleChatBox);
+        bubbleChatBox->setZValue(INT_MAX);
+        m_bubbleChatBoxs.insert(who, bubbleChatBox);
+    }
+
+    m_bubbleChatBoxs[who]->setText(line);
+}
+
+const QSize BUBBLE_CHAT_BOX_SHOW_AREA_SIZE(138, 64);
+
+QRect RoomScene::getBubbleChatBoxShowArea(const QString &who) const
+{
+    Photo *photo = name2photo.value(who, NULL);
+    if (photo) {
+        QRectF rect = photo->sceneBoundingRect();
+        return QRect(QPoint(rect.left() + 18, rect.top() + 26), BUBBLE_CHAT_BOX_SHOW_AREA_SIZE);
+    }
+    else {
+        QRectF rect = dashboard->getAvatarAreaSceneBoundingRect();
+        return QRect(QPoint(rect.left() + 8, rect.top() + 52), BUBBLE_CHAT_BOX_SHOW_AREA_SIZE);
+    }
 }
 
 PromptInfoItem::PromptInfoItem(QGraphicsItem *parent/* = 0*/)

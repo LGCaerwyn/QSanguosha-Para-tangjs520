@@ -40,7 +40,7 @@ Dashboard::Dashboard(QGraphicsPixmapItem *widget)
     }
 
     // At this stage, we cannot decide the dashboard size yet, the whole
-    // point in creating them here is to allow PlayerCardContainer to 
+    // point in creating them here is to allow PlayerCardContainer to
     // anchor all controls and widgets to the correct frame.
     //
     // Note that 20 is just a random plug-in so that we can proceed with
@@ -78,10 +78,9 @@ void Dashboard::hideControlButtons() {
     m_btnSortHandcard->hide();
 }
 
-void Dashboard::showProgressBar(QSanProtocol::Countdown countdown) {
-    _m_progressBar->setCountdown(countdown);
+void Dashboard::showProgressBar(const Countdown &countdown) {
     connect(_m_progressBar, SIGNAL(timedOut()), this, SIGNAL(progressBarTimedOut()));
-    _m_progressBar->show();
+    PlayerCardContainer::showProgressBar(countdown);
 }
 
 QGraphicsItem *Dashboard::getMouseClickReceiver() {
@@ -114,7 +113,7 @@ void Dashboard::_createMiddle() {
     trusting_item->setBrush(trusting_brush);
     trusting_item->setOpacity(0.36);
     trusting_item->setZValue(1002.0);
-    
+
     trusting_text->setFont(Config.BigFont);
     trusting_text->setBrush(Qt::white);
     trusting_text->setZValue(1002.1);
@@ -147,7 +146,7 @@ void Dashboard::_createRight() {
 
 void Dashboard::_updateFrames() {
     // Here is where we adjust all frames to actual width
-    QRect rect = QRect(G_DASHBOARD_LAYOUT.m_leftWidth, 0, 
+    QRect rect = QRect(G_DASHBOARD_LAYOUT.m_leftWidth, 0,
         this->width() - G_DASHBOARD_LAYOUT.m_rightWidth - G_DASHBOARD_LAYOUT.m_leftWidth, G_DASHBOARD_LAYOUT.m_normalHeight);
 
     _paintMiddleFrame(rect);
@@ -597,7 +596,7 @@ void Dashboard::skillButtonDeactivated() {
         if (btn->getViewAsSkill() != NULL && btn->isDown())
             btn->setState(QSanButton::S_STATE_UP);
     }
-    
+
     for (int i = 0; i < S_EQUIP_AREA_LENGTH; ++i) {
         if (_m_equipSkillBtns[i] != NULL) {
             _m_equipSkillBtns[i]->setEnabled(true);
@@ -1264,14 +1263,7 @@ void Dashboard::repaintAll()
     _paintRightFrame();
     _m_skillDock->update();
 
-    if (_m_screenNameItem != NULL) {
-        if (m_player != NULL) {
-            _m_layout->m_screenNameFont.paintText(_m_screenNameItem,
-                _m_layout->m_screenNameArea,
-                Qt::AlignCenter,
-                m_player->screenName());
-        }
-    }
+    updateScreenName(m_player->screenName());
 
     PlayerCardContainer::repaintAll();
 }

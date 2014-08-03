@@ -135,7 +135,7 @@ protected:
     bool _m_emitActivateSignal;
     bool _m_emitDeactivateSignal;
     bool _m_canEnable;
-    bool _m_canDisable; 
+    bool _m_canDisable;
     const Skill *_m_skill;
     const ViewAsSkill *_m_viewAsSkill;
 
@@ -205,7 +205,7 @@ public:
     const QList<QSanInvokeSkillButton *> &getAllSkillButtons() { return _m_buttons; }
 
 protected:
-    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {}
+    virtual void paint(QPainter *, const QStyleOptionGraphicsItem *, QWidget *) {}
     QList<QSanInvokeSkillButton *> _m_buttons;
     int _m_width;
 

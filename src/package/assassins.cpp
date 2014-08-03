@@ -113,7 +113,7 @@ bool MizhaoCard::targetFilter(const QList<const Player *> &targets, const Player
 
 void MizhaoCard::onEffect(const CardEffectStruct &effect) const{
     DummyCard *handcards = effect.from->wholeHandCards();
-    effect.to->obtainCard(handcards, false);
+    effect.to->obtainCard(handcards, false, CardMoveReason::S_REASON_GIVE);
     delete handcards;
     if (effect.to->isKongcheng()) return;
 
@@ -163,7 +163,7 @@ public:
     }
 
     virtual bool trigger(TriggerEvent, Room *room, ServerPlayer *, QVariant &data) const{
-        PindianStar pindian = data.value<PindianStar>();
+        PindianStruct *pindian = data.value<PindianStruct *>();
         if (pindian->reason != objectName() || pindian->from_number == pindian->to_number)
             return false;
 

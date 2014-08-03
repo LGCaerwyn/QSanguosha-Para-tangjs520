@@ -119,9 +119,9 @@ public:
         global = true;
     }
 
-    virtual bool trigger(TriggerEvent triggerEvent, Room *room, ServerPlayer *player, QVariant &data) const{
+    virtual bool trigger(TriggerEvent triggerEvent, Room *, ServerPlayer *player, QVariant &data) const{
         if ((triggerEvent == PreCardUsed || triggerEvent == CardResponded) && player->getPhase() <= Player::Play) {
-            CardStar card = NULL;
+            const Card *card = NULL;
             if (triggerEvent == PreCardUsed)
                 card = data.value<CardUseStruct>().card;
             else {
@@ -274,7 +274,7 @@ void ExtraCollateralCard::onUse(Room *, const CardUseStruct &card_use) const{
     ServerPlayer *victim = card_use.to.last();
 
     killer->setFlags("ExtraCollateralTarget");
-    killer->tag["collateralVictim"] = QVariant::fromValue((PlayerStar)victim);
+    killer->tag["collateralVictim"] = QVariant::fromValue(victim);
 }
 
 QiaoshuiCard::QiaoshuiCard() {
@@ -410,7 +410,7 @@ public:
                             }
                         }
                         Q_ASSERT(!victims.isEmpty());
-                        extra->tag["collateralVictim"] = QVariant::fromValue((PlayerStar)(victims.at(qrand() % victims.length() - 1)));
+                        extra->tag["collateralVictim"] = QVariant::fromValue(victims.at(qrand() % victims.length() - 1));
                     }
                 }
                 use.to.append(extra);
@@ -426,7 +426,7 @@ public:
                 room->doAnimate(QSanProtocol::S_ANIMATE_INDICATE, jianyong->objectName(), extra->objectName());
 
                 if (use.card->isKindOf("Collateral")) {
-                    ServerPlayer *victim = extra->tag["collateralVictim"].value<PlayerStar>();
+                    ServerPlayer *victim = extra->tag["collateralVictim"].value<ServerPlayer *>();
                     if (victim) {
                         LogMessage log;
                         log.type = "#CollateralSlash";
@@ -482,7 +482,7 @@ public:
     }
 
     virtual bool trigger(TriggerEvent, Room *room, ServerPlayer *, QVariant &data) const{
-        PindianStar pindian = data.value<PindianStar>();
+        PindianStruct *pindian = data.value<PindianStruct *>();
         const Card *to_obtain = NULL;
         ServerPlayer *jianyong = NULL;
         if (TriggerSkill::triggerable(pindian->from)) {
@@ -911,8 +911,12 @@ void DanshouCard::onEffect(const CardEffectStruct &effect) const{
             break;
     case 2:
             if (!effect.to->isNude()) {
-                int id = room->askForCardChosen(effect.from, effect.to, "he", "danshou");
-                room->obtainCard(effect.from, id, false);
+                const Card *card = room->askForExchange(effect.to, "danshou", 1, 1, true, "@danshou-give::" + effect.from->objectName());
+                if (card) {
+                    CardMoveReason reason(CardMoveReason::S_REASON_GIVE, effect.to->objectName(), effect.from->objectName(), "danshou", QString());
+                    room->obtainCard(effect.from, card, reason, false);
+                    delete card;
+                }
             }
             break;
     case 3:
@@ -1089,9 +1093,10 @@ void FenchengCard::use(Room *room, ServerPlayer *source, QList<ServerPlayer *> &
     source->setFlags("FenchengUsing");
     try {
         foreach (ServerPlayer *player, players) {
-            if (player->isAlive())
+            if (player->isAlive()) {
                 room->cardEffect(this, source, player);
                 room->getThread()->delay();
+            }
         }
         source->setFlags("-FenchengUsing");
     }
@@ -1137,7 +1142,7 @@ public:
                 } else {
                     room->setFixedDistance(player, fuhuanghou, 1);
                     QVariantList zhuikonglist = player->tag[objectName()].toList();
-                    zhuikonglist.append(QVariant::fromValue((PlayerStar)fuhuanghou));
+                    zhuikonglist.append(QVariant::fromValue(fuhuanghou));
                     player->tag[objectName()] = QVariant::fromValue(zhuikonglist);
                 }
             }
@@ -1164,7 +1169,7 @@ public:
         QVariantList zhuikonglist = player->tag["zhuikong"].toList();
         if (zhuikonglist.isEmpty()) return false;
         foreach (QVariant p, zhuikonglist) {
-            PlayerStar fuhuanghou = p.value<PlayerStar>();
+            ServerPlayer *fuhuanghou = p.value<ServerPlayer *>();
             room->setFixedDistance(player, fuhuanghou, -1);
         }
         player->tag.remove("zhuikong");
@@ -1208,7 +1213,7 @@ public:
                 const Card *card = NULL;
                 if (!target->isKongcheng())
                     card = room->askForCard(target, "Jink", "@qiuyuan-give:" + player->objectName(), data, Card::MethodNone);
-                CardMoveReason reason(CardMoveReason::S_REASON_GIVE, target->objectName(), player->objectName(), "nosqiuyuan", QString());
+                CardMoveReason reason(CardMoveReason::S_REASON_GIVE, target->objectName(), player->objectName(), "qiuyuan", QString());
                 if (!card) {
                     if (use.from->canSlash(target, use.card, false)) {
                         LogMessage log;
@@ -1222,7 +1227,6 @@ public:
                         use.to.append(target);
                         room->sortByActionOrder(use.to);
                         data = QVariant::fromValue(use);
-                        room->getThread()->trigger(TargetConfirming, room, target, data);
                     }
                 } else {
                     room->obtainCard(player, card, reason);

@@ -15,14 +15,14 @@
     "chooseGeneralBoxSwitchIconSizeThreshold": 12,
     "chooseGeneralBoxSwitchIconEachRow": 6,
     "chooseGeneralBoxSwitchIconEachRowForTooManyGenerals": 7,
-    "chooseGeneralBoxNoIconThreshold": 21, 
+    "chooseGeneralBoxNoIconThreshold": 21,
     "chooseGeneralBoxSparseIconSize": [171, 240],
     "chooseGeneralBoxDenseIconSize": [130, 130],
     "tinyAvatarSize": [40, 40],
     // When hp exceeds 5, we use text (e.g. 5/8) instead of drawing more than 5 magatamas. The color
     // and font are specified below.
     // All the font in skin file takes the following format:
-    // simple font: ["fontName", fontSize, fontWeight(bold), foreColor(rgba)] 
+    // simple font: ["fontName", fontSize, fontWeight(bold), foreColor(rgba)]
     // shawdow font: ["fontName", fontSize, fontWeight(bold), foreColor(rgba), shadowRadius,
     //                shadowDecadeFactor, shadowOffset, shadowDeepestColor]
     // the shadow radius is the width of shadow on each end; the shadow decade factor specifies how
@@ -38,7 +38,7 @@
         ["Arial", [15, 15, -2], 80, [66, 174, 34, 255], 2, 10, [0, 0], [20, 20, 20, 155]]
     ],
     // I realized that some MOD might need a wider background area than the foreground magatamas in order
-    // to draw certain effect. The following factor specifies the number of invisible magatama to be appended. 
+    // to draw certain effect. The following factor specifies the number of invisible magatama to be appended.
     "hpExtraSpaceHolder": 1
 },
 "room":
@@ -67,14 +67,14 @@
     "canvasArea": [0, 0, 157, 181],
     "handCardNumIconArea": [3, 94, 21, 22],
     "handCardFont": ["Arial", [12, 12, -1], 20, [255, 255, 255, 255]],
-    "equipAreas": [[3, 122, 150, 13], [3, 136, 150, 13], [3, 150, 150, 13], [3, 164, 150, 13]],
+    "equipAreas": [[3, 122, 150, 13], [3, 136, 150, 13], [3, 150, 75, 13], [76, 150, 75, 13], [3, 164, 150, 13]],
     "equipImageArea": [-2, 0, 130, 18],
-    //"equipTextArea": [35, -5, 85, 21], // need adjustment
     "equipSuitArea": [131, -3, 21, 17],
-    //"equipDistanceArea": [14, -5, 30, 21], // need adjustment
     "equipPointArea": [120, -8, 25, 25],
-    //"equipFont": ["FZLiBian-S02", [14, 14, 0], 50, [0, 0, 0, 255], 3, 50, [0, 0], [255, 255, 190, 255]],
-    "equipPointFont": ["font/font.ttf", [13, 13, 3], 20, [0, 0, 0, 255], 1, 1, [0, 0], [255, 255, 190, 128]], 
+    "horseImageArea": [-2, 0, 65, 18],
+    "horseSuitArea": [58, -3, 21, 17],
+    "horsePointArea": [47, -8, 25, 25],
+    "equipPointFont": ["font/font.ttf", [13, 13, 3], 20, [0, 0, 0, 255], 1, 1, [0, 0], [255, 255, 190, 128]],
     "delayedTrickFirstRegion": [-10, 16, 28, 28],
     "delayedTrickStep": [0, 19],
     "roleComboBoxPos": [130, 1],
@@ -138,15 +138,15 @@
     "equipBorderPos": [-6, -6],
     "equipSelectedOffset": [10, 0],
     "equipImageArea": [0, 0, 149, 25],
-    "equipTextArea": [0, 0, 0, 0],
     "equipSuitArea": [128, 5, 21, 17],
-    "equipDistanceArea": [0, 0, 0, 0],
     "equipPointArea": [117, -4, 30, 30],
-    "equipFont": ["SimLi", 9, 60, [0, 0, 0, 255], 3, 8, [0, 0], [240, 240, 240, 200]],
-    "equipPointFont": ["font/font.ttf", [14, 14, 3], 20, [0, 0, 0, 255], 1, 0, [0, 0], [240, 240, 240, 200]], 
+    "horseImageArea": [0, 0, 149, 25],
+    "horseSuitArea": [128, 5, 21, 17],
+    "horsePointArea": [117, -5, 30, 30],
+    "equipPointFont": ["font/font.ttf", [14, 14, 3], 20, [0, 0, 0, 255], 1, 0, [0, 0], [240, 240, 240, 200]],
     "delayedTrickFirstRegion": [3, 3, 28, 28],
     "delayedTrickStep": [28, 0],
-    // the width of the region to disperse cards when the cards are to be moved to the special pile. 
+    // the width of the region to disperse cards when the cards are to be moved to the special pile.
     "disperseWidth": 250,
     "markTextArea": [0, 0, 50, 50],
     "roleComboBoxPos": [75, 5],
@@ -209,39 +209,39 @@
 },
 "skillButton":
 {
-"height": 19,
-"width": [134, 66, 44], 
-"textArea": [[20, -2, 112, 20], [20, -2, 44, 20], [9, -2, 40, 20]],
-"textAreaDown": [[21, -1, 112, 20], [21, -1, 44, 20], [10, -1, 40, 20]],
-"textFont": [["simkai", [13, 13, 2], 50, [0, 0, 0, 255], 1, 1, [0, 0], [255, 255, 190, 128]],  // wide
-             ["simkai", [13, 13, 1], 50, [0, 0, 0, 255], 1, 1, [0, 0], [255, 255, 190, 128]],  // medium
-             ["simkai", [13, 13, 0], 50, [0, 0, 0, 255], 1, 1, [0, 0], [255, 255, 190, 128]]],  // narrow
+    "height": 19,
+    "width": [134, 66, 44],
+    "textArea": [[20, -2, 112, 20], [20, -2, 44, 20], [9, -2, 40, 20]],
+    "textAreaDown": [[21, -1, 112, 20], [21, -1, 44, 20], [10, -1, 40, 20]],
+    "textFont": [["simkai", [13, 13, 2], 50, [0, 0, 0, 255], 1, 1, [0, 0], [255, 255, 190, 128]],  // wide
+                 ["simkai", [13, 13, 1], 50, [0, 0, 0, 255], 1, 1, [0, 0], [255, 255, 190, 128]],  // medium
+                 ["simkai", [13, 13, 0], 50, [0, 0, 0, 255], 1, 1, [0, 0], [255, 255, 190, 128]]],  // narrow
 
-// The following settings override the text color defined above
-// xxButtonColor = [normalColor, downColor, disabledColor, hoverColor]
-"awakenFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]], // normalColor = [penColor, shadowColor]
-                    [[255, 255, 255, 255], [0, 0, 0, 120]], // downColor = [penColor, shadowColor]
-                    [[255, 255, 255, 255], [0, 0, 0, 120]], // disableColor = [penColor, shadowColor]
-                    [[255, 255, 255, 255], [0, 0, 0, 120]]], // hoverColor = [penColor, shadowColor]
-"compulsoryFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
+    // The following settings override the text color defined above
+    // xxButtonColor = [normalColor, downColor, disabledColor, hoverColor]
+    "awakenFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]], // normalColor = [penColor, shadowColor]
+                        [[255, 255, 255, 255], [0, 0, 0, 120]], // downColor = [penColor, shadowColor]
+                        [[255, 255, 255, 255], [0, 0, 0, 120]], // disableColor = [penColor, shadowColor]
+                        [[255, 255, 255, 255], [0, 0, 0, 120]]], // hoverColor = [penColor, shadowColor]
+    "compulsoryFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
+                            [[255, 255, 255, 255], [0, 0, 0, 120]],
+                            [[255, 255, 255, 255], [0, 0, 0, 120]],
+                            [[255, 255, 255, 255], [0, 0, 0, 120]]],
+    "frequentFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
+                          [[255, 255, 255, 255], [0, 0, 0, 120]],
+                          [[255, 255, 255, 255], [0, 0, 0, 120]],
+                          [[255, 255, 255, 255], [0, 0, 0, 120]]],
+    "oneoffFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
                         [[255, 255, 255, 255], [0, 0, 0, 120]],
                         [[255, 255, 255, 255], [0, 0, 0, 120]],
                         [[255, 255, 255, 255], [0, 0, 0, 120]]],
-"frequentFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
-                      [[255, 255, 255, 255], [0, 0, 0, 120]],
-                      [[255, 255, 255, 255], [0, 0, 0, 120]],
-                      [[255, 255, 255, 255], [0, 0, 0, 120]]],
-"oneoffFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
-                    [[255, 255, 255, 255], [0, 0, 0, 120]],
-                    [[255, 255, 255, 255], [0, 0, 0, 120]],
-                    [[255, 255, 255, 255], [0, 0, 0, 120]]],
-"proactiveFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
-                       [[255, 255, 255, 255], [0, 0, 0, 120]],
-                       [[255, 255, 255, 255], [0, 0, 0, 120]],
-                       [[255, 255, 255, 255], [0, 0, 0, 120]]],
-"attachedlordFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
-                          [[255, 255, 255, 255], [0, 0, 0, 120]],
-                          [[255, 255, 255, 255], [0, 0, 0, 120]],
-                          [[255, 255, 255, 255], [0, 0, 0, 120]]]
+    "proactiveFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
+                           [[255, 255, 255, 255], [0, 0, 0, 120]],
+                           [[255, 255, 255, 255], [0, 0, 0, 120]],
+                           [[255, 255, 255, 255], [0, 0, 0, 120]]],
+    "attachedlordFontColor": [[[255, 255, 255, 255], [0, 0, 0, 120]],
+                              [[255, 255, 255, 255], [0, 0, 0, 120]],
+                              [[255, 255, 255, 255], [0, 0, 0, 120]],
+                              [[255, 255, 255, 255], [0, 0, 0, 120]]]
 }
 }
