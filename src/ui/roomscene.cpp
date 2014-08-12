@@ -58,8 +58,8 @@ RolesBoxItem::RolesBoxItem()
     }
 }
 
-RoomScene::RoomScene(QMainWindow *main_window)
-    : main_window(main_window), game_started(false),
+RoomScene::RoomScene(QMainWindow *mainWindow)
+    : main_window(mainWindow), game_started(false),
     pindian_success(false), _m_currentStage(0)
 {
     setParent(main_window);
@@ -1956,14 +1956,17 @@ bool RoomScene::_processCardsMove(CardsMoveStruct &move, bool isLost) {
 }
 
 void RoomScene::getCards(int moveId, QList<CardsMoveStruct> card_moves) {
+    int index = 0;
     for (int i = 0; i < card_moves.size(); ++i) {
         CardsMoveStruct &movement = card_moves[i];
         bool skipMove = _processCardsMove(movement, false);
-        if (skipMove) continue;
-        if (_shouldIgnoreDisplayMove(movement)) continue;
+        if (skipMove || _shouldIgnoreDisplayMove(movement)) {
+            continue;
+        }
         card_container->m_currentPlayer = (ClientPlayer *)movement.to;
         GenericCardContainer *to_container = _getGenericCardContainer(movement.to_place, movement.to);
-        QList<CardItem *> cards = _m_cardsMoveStash[moveId].value(i);
+        QList<CardItem *> cards = _m_cardsMoveStash[moveId].value(index);
+        ++index;
         for (int j = 0; j < cards.size(); ++j) {
             CardItem *card = cards[j];
             card->setFlag(QGraphicsItem::ItemIsMovable, false);
@@ -3673,9 +3676,17 @@ void RoomScene::doGongxin(const QList<int> &card_ids, bool enable_heart, QList<i
         card_container->addCloseButton();
 }
 
-void RoomScene::showOwnerButtons(bool owner) {
-    if (control_panel && !game_started)
-        control_panel->setVisible(owner);
+void RoomScene::showOwnerButtons(bool owner)
+{
+    if (control_panel && !game_started) {
+        MainWindow *mainWnd = qobject_cast<MainWindow *>(main_window);
+        if (NULL != mainWnd && !mainWnd->isConsoleStart()) {
+            control_panel->hide();
+        }
+        else {
+            control_panel->setVisible(owner);
+        }
+    }
 }
 
 void RoomScene::showPlayerCards() {
@@ -4881,14 +4892,16 @@ bool RoomScene::isReturnMainMenuButtonVisible() const
 
 void RoomScene::showBubbleChatBox(const QString &who, const QString &line)
 {
-    if (!m_bubbleChatBoxs.contains(who)) {
-        BubbleChatBox *bubbleChatBox = new BubbleChatBox(getBubbleChatBoxShowArea(who));
-        addItem(bubbleChatBox);
-        bubbleChatBox->setZValue(INT_MAX);
-        m_bubbleChatBoxs.insert(who, bubbleChatBox);
-    }
+    if (Config.BubbleChatBoxDelaySeconds > 0) {
+        if (!m_bubbleChatBoxs.contains(who)) {
+            BubbleChatBox *bubbleChatBox = new BubbleChatBox(getBubbleChatBoxShowArea(who));
+            addItem(bubbleChatBox);
+            bubbleChatBox->setZValue(INT_MAX);
+            m_bubbleChatBoxs.insert(who, bubbleChatBox);
+        }
 
-    m_bubbleChatBoxs[who]->setText(line);
+        m_bubbleChatBoxs[who]->setText(line);
+    }
 }
 
 const QSize BUBBLE_CHAT_BOX_SHOW_AREA_SIZE(138, 64);
