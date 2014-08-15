@@ -382,6 +382,8 @@ RoomScene::RoomScene(QMainWindow *mainWindow)
 
     pindian_from_card = NULL;
     pindian_to_card = NULL;
+
+    _m_isInDragAndUseMode = false;
 }
 
 void RoomScene::handleGameEvent(const Json::Value &arg) {
@@ -1114,19 +1116,16 @@ void RoomScene::arrangeSeats(const QList<const ClientPlayer *> &seats) {
     }
 }
 
-// @todo: The following 3 fuctions are for drag & use feature. Currently they are very buggy and
-// cause a lot of major problems. We should look into this later.
 void RoomScene::mousePressEvent(QGraphicsSceneMouseEvent *event) {
     QGraphicsScene::mousePressEvent(event);
-    /*
-    _m_isMouseButtonDown = true;
-    _m_isInDragAndUseMode = false;
-    */
+
+    if (Config.EnableSuperDrag)
+        _m_isInDragAndUseMode = false;
 }
 
 void RoomScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
     QGraphicsScene::mouseReleaseEvent(event);
-    /*
+
     if (_m_isInDragAndUseMode) {
         bool accepted = false;
         if (ok_button->isEnabled()) {
@@ -1140,19 +1139,22 @@ void RoomScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
             if (!accepted && dashboard->isAvatarUnderMouse())
                 accepted = true;
         }
-        if (accepted)
+        if (accepted) {
             ok_button->click();
-        else {
+        } else {
             enableTargets(NULL);
             dashboard->unselectAll();
         }
         _m_isInDragAndUseMode = false;
-    }*/
+    }
 }
 
 void RoomScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
     QGraphicsScene::mouseMoveEvent(event);
-    /*
+
+    if (!Config.EnableSuperDrag)
+        return;
+
     QGraphicsObject *obj = static_cast<QGraphicsObject *>(focusItem());
     CardItem *card_item = qobject_cast<CardItem *>(obj);
     if (!card_item || !card_item->isUnderMouse())
@@ -1167,15 +1169,14 @@ void RoomScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
     if (dashboard->isAvatarUnderMouse())
         victim = dashboard;
 
-    _m_isInDragAndUseMode = true;
-    if (!dashboard->isSelected()) hasUpdate = true;
-    if (victim != NULL && !victim->isSelected()) {
+    if (victim != NULL) {
         if (!_m_isInDragAndUseMode)
             enableTargets(card_item->getCard());
+
         _m_isInDragAndUseMode = true;
         dashboard->selectCard(card_item, true);
         victim->setSelected(true);
-    }*/
+    }
 }
 
 void RoomScene::enableTargets(const Card *card) {
@@ -1976,8 +1977,9 @@ void RoomScene::getCards(int moveId, QList<CardsMoveStruct> card_moves) {
                 card->deleteLater();
                 cards.removeAt(j);
                 --j;
-            } else
+            } else {
                 card->setEnabled(true);
+            }
             card->setFootnote(_translateMovement(movement));
             card->hideFootnote();
         }
@@ -2010,8 +2012,12 @@ void RoomScene::loseCards(int moveId, QList<CardsMoveStruct> card_moves) {
 }
 
 QString RoomScene::_translateMovement(const CardsMoveStruct &move) {
+    if (move.reason.m_reason == CardMoveReason::S_REASON_UNKNOWN
+        || move.reason.m_reason == CardMoveReason::S_REASON_DRAW) {
+        return QString();
+    }
+
     CardMoveReason reason = move.reason;
-    if (reason.m_reason == CardMoveReason::S_REASON_UNKNOWN) return QString();
     // ============================================
     if (move.from && move.card_ids.length() == 1 && move.to_place == Player::DrawPile
         && move.from->property("zongxuan_move").toString() == QString::number(move.card_ids.first()))
