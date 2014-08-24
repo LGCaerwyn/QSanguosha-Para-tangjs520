@@ -236,6 +236,7 @@ private:
     bool _shouldIgnoreDisplayMove(CardsMoveStruct &movement);
     bool _processCardsMove(CardsMoveStruct &move, bool isLost);
     bool _m_isInDragAndUseMode;
+    bool _m_superDragStarted;
     const QSanRoomSkin::RoomLayout *_m_roomLayout;
     const QSanRoomSkin::PhotoLayout *_m_photoLayout;
     const QSanRoomSkin::CommonLayout *_m_commonLayout;
@@ -247,7 +248,6 @@ private:
         QString &generalName1, int &skinIndex1, QString &generalName2, int &skinIndex2);
 
     QMap<int, QList<QList<CardItem *> > > _m_cardsMoveStash;
-    Button *add_robot, *fill_robots;
     Button *return_main_menu;
 
     QList<Photo *> photos;
@@ -261,7 +261,6 @@ private:
 
     Window *pindian_box;
     CardItem *pindian_from_card, *pindian_to_card;
-    QGraphicsItem *control_panel;
     QMap<PlayerCardContainer *, const ClientPlayer *> item2player;
     QDialog *m_choiceDialog; // Dialog for choosing generals, suits, card/equip, or kingdoms
 
@@ -395,7 +394,6 @@ private slots:
     void setEmotion(const QString &who, const QString &emotion);
     void showSkillInvocation(const QString &who, const QString &skill_name);
     void doAnimation(int name, const QStringList &args);
-    void showOwnerButtons(bool owner);
     void showPlayerCards();
     void updateRolesBox();
     void updateRoles(const QString &roles);

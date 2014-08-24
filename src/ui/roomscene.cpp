@@ -264,14 +264,6 @@ RoomScene::RoomScene(QMainWindow *mainWindow)
     if (ServerInfo.DisableChat)
         chat_edit_widget->hide();
 
-    //单机游戏时默认隐藏与聊天相关的窗口
-    MainWindow *mainWnd = qobject_cast<MainWindow *>(main_window);
-    if (NULL != mainWnd && mainWnd->isConsoleStart()) {
-        chat_box_widget->hide();
-        chat_edit->hide();
-        chat_widget->hide();
-    }
-
     // log box
     log_box = new ClientLogBox;
     log_box->setTextColor(Config.TextEditColor);
@@ -323,35 +315,14 @@ RoomScene::RoomScene(QMainWindow *mainWindow)
     m_pileCardNumInfoTextBox->setDefaultTextColor(Config.TextEditColor);
     updateRoles(roles);
 
-    add_robot = NULL;
-    fill_robots = NULL;
-    return_main_menu = NULL;
-
-    //战局重放时无需创建“补全电脑”、“添加一个电脑”和“返回主菜单”按钮
-    if (!ClientInstance->isReplayState() && ServerInfo.EnableAI) {
-        control_panel = addRect(0, 0, 500, 150, Qt::NoPen);
-        control_panel->hide();
-
-        add_robot = new Button(tr("Add a robot"));
-        add_robot->setParentItem(control_panel);
-        add_robot->setTransform(QTransform::fromTranslate(-add_robot->boundingRect().width() / 2, -add_robot->boundingRect().height() / 2), true);
-        add_robot->setPos(0, -add_robot->boundingRect().height() - 10);
-
-        fill_robots = new Button(tr("Fill robots"));
-        fill_robots->setParentItem(control_panel);
-        fill_robots->setToolTip(tr("Fill robots and start a new game"));
-        fill_robots->setTransform(QTransform::fromTranslate(-fill_robots->boundingRect().width() / 2, -fill_robots->boundingRect().height() / 2), true);
-        add_robot->setPos(0, add_robot->boundingRect().height() + 10);
-
+    //战局重放时无需创建“返回主菜单”按钮
+    if (!ClientInstance->isReplayState()) {
         return_main_menu = new Button(tr("Return to main menu"));
         addItem(return_main_menu);
         connect(return_main_menu, SIGNAL(clicked()), this, SIGNAL(return_to_start()));
-
-        connect(add_robot, SIGNAL(clicked()), ClientInstance, SLOT(addRobot()));
-        connect(fill_robots, SIGNAL(clicked()), ClientInstance, SLOT(fillRobots()));
-        connect(Self, SIGNAL(owner_changed(bool)), this, SLOT(showOwnerButtons(bool)));
-    } else {
-        control_panel = NULL;
+    }
+    else {
+        return_main_menu = NULL;
     }
     animations = new EffectAnimation(this);
 
@@ -384,6 +355,7 @@ RoomScene::RoomScene(QMainWindow *mainWindow)
     pindian_to_card = NULL;
 
     _m_isInDragAndUseMode = false;
+    _m_superDragStarted = false;
 }
 
 void RoomScene::handleGameEvent(const Json::Value &arg) {
@@ -831,6 +803,12 @@ void RoomScene::adjustItems() {
 
     updateTable();
     updateRolesBox();
+
+    QMapIterator<QString, BubbleChatBox *> iter(m_bubbleChatBoxs);
+    while (iter.hasNext()) {
+        iter.next();
+        iter.value()->setArea(getBubbleChatBoxShowArea(iter.key()));
+    }
 }
 
 void RoomScene::_dispersePhotos(QList<Photo *> &photos, QRectF fillRegion,
@@ -976,17 +954,9 @@ void RoomScene::updateTable() {
 
     m_tableCenterPos = m_tableRect.center();
 
-    if (control_panel && return_main_menu) {
-        control_panel->setPos(m_tableCenterPos);
-        QRectF fillRobotsBtnRect = fill_robots->sceneBoundingRect();
-        QPointF returnMainMenuBtnPos = QPointF(fillRobotsBtnRect.left(), fillRobotsBtnRect.bottom()
-            + fill_robots->boundingRect().height() + 20);
-        QRectF dashboardRect = dashboard->sceneBoundingRect();
-        int diff = (returnMainMenuBtnPos.y() + return_main_menu->boundingRect().height() + 15) - dashboardRect.top();
-        if (diff > 0) {
-            control_panel->moveBy(0, -diff);
-            returnMainMenuBtnPos += QPointF(0, -diff);
-        }
+    if (return_main_menu) {
+        QPointF returnMainMenuBtnPos = QPointF(m_tableCenterPos.x() - return_main_menu->boundingRect().width() / 2,
+            dashboard->sceneBoundingRect().top() - return_main_menu->boundingRect().height() - 15);
         return_main_menu->setPos(returnMainMenuBtnPos);
     }
 
@@ -1118,29 +1088,18 @@ void RoomScene::arrangeSeats(const QList<const ClientPlayer *> &seats) {
 
 void RoomScene::mousePressEvent(QGraphicsSceneMouseEvent *event) {
     QGraphicsScene::mousePressEvent(event);
-
-    if (Config.EnableSuperDrag)
-        _m_isInDragAndUseMode = false;
 }
 
 void RoomScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
     QGraphicsScene::mouseReleaseEvent(event);
 
     if (_m_isInDragAndUseMode) {
-        bool accepted = false;
-        if (ok_button->isEnabled()) {
-            foreach (Photo *photo, photos) {
-                if (photo->isUnderMouse()) {
-                    accepted = true;
-                    break;
-                }
-            }
-
-            if (!accepted && dashboard->isAvatarUnderMouse())
-                accepted = true;
-        }
-        if (accepted) {
-            ok_button->click();
+        if ((ok_button->isEnabled() || dashboard->currentSkill())
+            && (!dashboard->isUnderMouse() || dashboard->isAvatarUnderMouse())) {
+                if (ok_button->isEnabled())
+                    ok_button->click();
+                else
+                    dashboard->adjustCards(true);
         } else {
             enableTargets(NULL);
             dashboard->unselectAll();
@@ -1157,8 +1116,31 @@ void RoomScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
 
     QGraphicsObject *obj = static_cast<QGraphicsObject *>(focusItem());
     CardItem *card_item = qobject_cast<CardItem *>(obj);
-    if (!card_item || !card_item->isUnderMouse())
+    if (!card_item || !card_item->isUnderMouse() || !dashboard->hasHandCard(card_item))
         return;
+
+    static bool wasOutsideDashboard = false;
+    const bool isOutsideDashboard = !dashboard->isUnderMouse() || dashboard->isAvatarUnderMouse();
+    if (isOutsideDashboard != wasOutsideDashboard) {
+        wasOutsideDashboard = isOutsideDashboard;
+        if (wasOutsideDashboard && !_m_isInDragAndUseMode) {
+            if (!_m_superDragStarted && !dashboard->getPendings().isEmpty())
+                dashboard->clearPendings();
+            dashboard->selectCard(card_item, true);
+            if (dashboard->currentSkill() && !dashboard->getPendings().contains(card_item)) {
+                dashboard->addPending(card_item);
+                dashboard->updatePending();
+            }
+            _m_isInDragAndUseMode = true;
+            _m_superDragStarted = true;
+            if (!dashboard->currentSkill()
+                && (ClientInstance->getStatus() == Client::Playing
+                || ClientInstance->getStatus() == Client::RespondingUse)) {
+                    enableTargets(card_item->getCard());
+            }
+        }
+    }
+
     PlayerCardContainer *victim = NULL;
 
     foreach (Photo *photo, photos) {
@@ -1169,13 +1151,9 @@ void RoomScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
     if (dashboard->isAvatarUnderMouse())
         victim = dashboard;
 
-    if (victim != NULL) {
-        if (!_m_isInDragAndUseMode)
-            enableTargets(card_item->getCard());
-
-        _m_isInDragAndUseMode = true;
-        dashboard->selectCard(card_item, true);
+    if (victim != NULL && victim->canBeSelected()) {
         victim->setSelected(true);
+        updateSelectedTargets();
     }
 }
 
@@ -1380,14 +1358,6 @@ void RoomScene::keyReleaseEvent(QKeyEvent *event) {
             adjustItems();
             break;
         }
-    case Qt::Key_F7: {
-        if (control_is_down) {
-            if (add_robot && add_robot->isVisible())
-                ClientInstance->addRobot();
-        } else if (fill_robots && fill_robots->isVisible())
-            ClientInstance->fillRobots();
-        break;
-    }
     case Qt::Key_F12: {
             if (Self->hasSkill("huashen")) {
                 const Skill *huashen_skill = Sanguosha->getSkill("huashen");
@@ -2546,6 +2516,8 @@ void RoomScene::updateStatus(Client::Status oldStatus, Client::Status newStatus)
         }
     }
 
+    _m_superDragStarted = false;
+
     switch (newStatus & Client::ClientStatusBasicMask) {
     case Client::NotActive: {
             if (oldStatus == Client::ExecDialog) {
@@ -2893,10 +2865,6 @@ void RoomScene::doDiscardButton() {
 }
 
 void RoomScene::startInXs() {
-    if (control_panel) {
-        control_panel->hide();
-    }
-
     if (return_main_menu) {
         return_main_menu->hide();
     }
@@ -3682,19 +3650,6 @@ void RoomScene::doGongxin(const QList<int> &card_ids, bool enable_heart, QList<i
         card_container->addCloseButton();
 }
 
-void RoomScene::showOwnerButtons(bool owner)
-{
-    if (control_panel && !game_started) {
-        MainWindow *mainWnd = qobject_cast<MainWindow *>(main_window);
-        if (NULL != mainWnd && !mainWnd->isConsoleStart()) {
-            control_panel->hide();
-        }
-        else {
-            control_panel->setVisible(owner);
-        }
-    }
-}
-
 void RoomScene::showPlayerCards() {
     QAction *action = qobject_cast<QAction *>(sender());
     if (action) {
@@ -3803,9 +3758,6 @@ void RoomScene::onGameStart() {
             enemy_box->show();
         }
     }
-
-    if (control_panel)
-        control_panel->hide();
 
     if (return_main_menu) {
         return_main_menu->hide();

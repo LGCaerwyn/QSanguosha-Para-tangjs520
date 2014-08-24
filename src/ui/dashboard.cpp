@@ -83,10 +83,6 @@ void Dashboard::showProgressBar(const Countdown &countdown) {
     PlayerCardContainer::showProgressBar(countdown);
 }
 
-QGraphicsItem *Dashboard::getMouseClickReceiver() {
-    return _m_rightFrame;
-}
-
 void Dashboard::_createLeft() {
     _paintLeftFrame();
 
@@ -1133,6 +1129,15 @@ void Dashboard::updatePending() {
     }
 }
 
+void Dashboard::clearPendings()
+{
+    selected = NULL;
+    foreach (CardItem *item, m_handCards) {
+        selectCard(item, false);
+    }
+    pendings.clear();
+}
+
 void Dashboard::onCardItemHover() {
     QGraphicsItem *card_item = qobject_cast<QGraphicsItem *>(sender());
     if (!card_item) return;
@@ -1149,18 +1154,18 @@ void Dashboard::onCardItemLeaveHover() {
 
 void Dashboard::onMarkChanged() {
     CardItem *card_item = qobject_cast<CardItem *>(sender());
-
-    Q_ASSERT(card_item->isEquipped());
-
     if (card_item) {
         if (card_item->isMarked()) {
             if (!pendings.contains(card_item)) {
-                if (view_as_skill && view_as_skill->inherits("OneCardViewAsSkill"))
+                if (view_as_skill && view_as_skill->inherits("OneCardViewAsSkill")) {
                     unselectAll(card_item);
+                }
                 pendings.append(card_item);
             }
-        } else
+        }
+        else {
             pendings.removeOne(card_item);
+        }
 
         updatePending();
     }
