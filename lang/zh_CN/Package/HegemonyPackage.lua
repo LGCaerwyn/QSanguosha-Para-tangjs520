@@ -16,7 +16,7 @@ return {
 	["ganfuren"] = "甘夫人",
 	["illustrator:ganfuren"] = "琛·美弟奇",
 	["shushen"] = "淑慎",
-	[":shushen"] = "每当你回复1点体力后，你可以令一名其他角色回复1点体力或摸两张牌。",
+	[":shushen"] = "每当你回复1点体力后，你可以令一名其他角色回复1点体力。",
 	["shushen-invoke"] = "你可以发动“淑慎”<br/> <b>操作提示</b>: 选择一名其他角色→点击确定<br/>",
 	["shushen:recover"] = "令该角色回复1点体力",
 	["shushen:draw"] = "令该角色摸一张牌",

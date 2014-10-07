@@ -50,10 +50,7 @@ public:
             ServerPlayer *target = room->askForPlayerChosen(player, room->getOtherPlayers(player), objectName(), "shushen-invoke", true, true);
             if (target) {
                 room->broadcastSkillInvoke(objectName(), target->getGeneralName().contains("liubei") ? 2 : 1);
-                if (target->isWounded() && room->askForChoice(player, objectName(), "recover+draw", QVariant::fromValue(target)) == "recover")
-                    room->recover(target, RecoverStruct(player));
-                else
-                    target->drawCards(2, objectName());
+                target->drawCards(1, objectName());
             } else {
                 break;
             }

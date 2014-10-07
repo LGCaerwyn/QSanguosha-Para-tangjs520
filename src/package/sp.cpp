@@ -2337,6 +2337,57 @@ public:
     }
 };
 
+class sp_Shushen: public TriggerSkill {
+public:
+    sp_Shushen(): TriggerSkill("sp_shushen") {
+        events << HpRecover;
+    }
+
+    virtual bool trigger(TriggerEvent, Room *room, ServerPlayer *player, QVariant &data) const{
+        RecoverStruct recover_struct = data.value<RecoverStruct>();
+        int recover = recover_struct.recover;
+        for (int i = 0; i < recover; i++) {
+            ServerPlayer *target = room->askForPlayerChosen(player, room->getOtherPlayers(player), objectName(), "shushen-invoke", true, true);
+            if (target) {
+                room->broadcastSkillInvoke(objectName(), target->getGeneralName().contains("liubei") ? 2 : 1);
+                if (target->isWounded() && room->askForChoice(player, objectName(), "recover+draw", QVariant::fromValue(target)) == "recover")
+                    room->recover(target, RecoverStruct(player));
+                else
+                    target->drawCards(2, objectName());
+            } else {
+                break;
+            }
+        }
+        return false;
+    }
+};
+
+class sp_Shenzhi: public PhaseChangeSkill {
+public:
+    sp_Shenzhi(): PhaseChangeSkill("sp_shenzhi") {
+    }
+
+    virtual bool onPhaseChange(ServerPlayer *ganfuren) const{
+        Room *room = ganfuren->getRoom();
+        if (ganfuren->getPhase() != Player::Start || ganfuren->isKongcheng())
+            return false;
+        if (room->askForSkillInvoke(ganfuren, objectName())) {
+            // As the cost, if one of her handcards cannot be throwed, the skill is unable to invoke
+            foreach (const Card *card, ganfuren->getHandcards()) {
+                if (ganfuren->isJilei(card))
+                    return false;
+            }
+            //==================================
+            int handcard_num = ganfuren->getHandcardNum();
+            room->broadcastSkillInvoke(objectName());
+            ganfuren->throwAllHandCards();
+            if (handcard_num >= ganfuren->getHp())
+                room->recover(ganfuren, RecoverStruct(ganfuren));
+        }
+        return false;
+    }
+};
+
 class Fulu: public OneCardViewAsSkill {
 public:
     Fulu(): OneCardViewAsSkill("fulu") {
@@ -2893,8 +2944,8 @@ SPPackage::SPPackage()
     related_skills.insertMulti("shefu", "#shefu-cancel");
 
     General *sp_ganfuren = new General(this, "sp_ganfuren", "shu", 3, false, true); // SP 037
-    sp_ganfuren->addSkill("shushen");
-    sp_ganfuren->addSkill("shenzhi");
+    sp_ganfuren->addSkill(new sp_Shushen);
+    sp_ganfuren->addSkill(new sp_Shenzhi);
 
     General *huangjinleishi = new General(this, "huangjinleishi", "qun", 3, false); // SP 038
     huangjinleishi->addSkill(new Fulu);

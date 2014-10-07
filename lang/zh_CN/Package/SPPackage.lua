@@ -190,6 +190,12 @@ return {
 	["$ShefuRecord"] = "%from 为 %card 记录牌名【%arg】",
 	["#ShefuEffect"] = "%from 发动了“%arg2”，%to 使用的【%arg】无效",
 
+	["sp_ganfuren"] = "SP甘夫人",
+	["sp_shushen"] = "淑慎",
+	[":sp_shushen"] = "每当你回复1点体力后，你可以令一名其他角色回复1点体力或摸两张牌。",
+	["sp_shenzhi"] = "神智",
+	[":sp_shenzhi"] = "准备阶段开始时，你可以弃置所有手牌：若你以此法弃置的牌不少于X张，你回复1点体力。（X为你的体力值）",
+	
 	["#huangjinleishi"] = "雷祭之姝",
 	["huangjinleishi"] = "黄巾雷使",
 	["illustrator:huangjinleishi"] = "depp",

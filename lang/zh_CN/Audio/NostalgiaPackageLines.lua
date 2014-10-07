@@ -1,10 +1,19 @@
 -- lines for Nostalgia Package
 
 return {
+    -- 旧 曹操
+	["$nosjianxiong1"] = "宁叫我负天下人休叫天下人负我！",
+	["$nosjianxiong2"] = "吾好梦中杀人！",
+
 	-- 旧 张辽
 	["$nostuxi1"] = "哼，没想到吧！",
 	["$nostuxi2"] = "拿来吧！",
 
+	
+	-- 旧 刘备
+	["$nosrende1"] = "以德服人！",
+	["$nosrende2"] = "惟贤惟德，能服于人！",
+	
 	-- 旧 周泰
 	["$nosbuqu1"] = "我绝不会倒下！",
 	["$nosbuqu2"] = "还不够！",
@@ -18,6 +27,11 @@ return {
 	["$huangtian3"] = "苍天已死，黄天当立！",
 	["$huangtian4"] = "岁在甲子，天下大吉！",
 	["~nos_zhangjiao"] = "黄天…也死了……",
+	
+	-- 旧 曹仁
+	["cv:nos_lingtong"] = "官方",
+	["$nosjushou1"] = "升得高巍，屯兵固守！",
+	["$nosjushou2"] = "坚守不出严正以待！",
 
 	-- 旧 于吉
 	["$nosguhuo1"] = "你信吗？",
@@ -42,8 +56,10 @@ return {
 	-- 旧 徐庶
 	["$noswuyan1"] = "唉，一切尽在不言中。",
 	["$noswuyan2"] = "嘘，言多必失啊。",
+	["$noswuyan3"] = "丞相之才远胜于吾，庶何敢妄言。",
 	["$nosjujian1"] = "我看好你！",
 	["$nosjujian2"] = "将军岂愿抓牌乎？",
+	["$nosjujian3"] = "卧龙之才远胜于吾？",
 	["~nos_xushu"] = "娘，孩儿不孝，向您…请罪……",
 
 	-- 旧 关兴张苞
@@ -55,15 +71,22 @@ return {
 
 	-- 旧 韩当
 	["cv:nos_handang"] = "风叹息",
-	["$nosgongqi"] = "弓马齐备，远射近突！",
+	["$nosgongqi1"] = "吃我一箭！",
+	["$nosgongqi2"] = "鼠辈哪里走！",
 	["$nosjiefan1"] = "解烦军至，此危自解！",
 	["$nosjiefan2"] = "吾主莫慌，韩义公在此！",
 	["~nos_handang"] = "我主堪忧，我主堪忧啊……",
+	
+	-- 旧 张春华
+	
+	["$nosshangshi1"] = "无情者伤人有情者自伤！",
+	["$nosshangshi2"] = "自损八百可伤敌一千！",
+	
 
 	-- 旧 马岱
 	["cv:nos_madai"] = "风叹息",
-	["$nosqianxi1"] = "（拔剑声）",
-	["$nosqianxi2"] = "我敢杀你！",
+	["$nosqianxi1"] = "伤敌十指不如断敌一指",
+	["$nosqianxi2"] = "咱草除根，除恶务尽！",
 	["$nosqianxi3"] = "竟然有防备？只能力战搏杀之！", -- 判定失败
 
 	-- 旧 王异
